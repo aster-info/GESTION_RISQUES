@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Risques - CHU Saint-Pierre</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (pour l'export Excel .xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full font-sans text-slate-800 flex flex-col">
+
+    <!-- En-tête / Navigation -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="STPIERRE.png" alt="Logo CHU Saint-Pierre" class="h-9 w-auto rounded bg-white p-1 object-contain" id="header-logo" onerror="this.src='https://placehold.co/40x40/red/white?text=SP'">
+                <span class="font-bold text-xl tracking-tight hidden sm:inline">Gestion des Risques - ST PIERRE</span>
+            </div>
+            
+            <nav class="flex items-center space-x-2 sm:space-x-4">
+                <button onclick="switchTab('encode')" id="btn-tab-encode" class="px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2 transition">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Encoder
+                </button>
+                <button onclick="switchTab('database')" id="btn-tab-database" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 transition">
+                    <i data-lucide="database" class="w-4 h-4"></i> Base de Données
+                </button>
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 text-amber-300 transition">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Tableau de bord
+                </button>
+                <div class="border-l border-slate-700 h-6 mx-1"></div>
+                <div class="flex items-center gap-2">
+                    <span id="user-badge" class="text-xs bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300 hidden md:inline">Rôle: Utilisateur</span>
+                    <button onclick="toggleAdminMode()" id="btn-toggle-admin" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium transition">
+                        Admin
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenu Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- SECTION 1 : FORMULAIRE D'ENCODAGE -->
+        <section id="section-encode" class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+            
+            <div class="border-b border-slate-200 pb-5 mb-6 flex items-center gap-4">
+                <img src="STPIERRE.png" alt="Logo CHU Saint-Pierre" class="h-14 w-auto object-contain" id="form-logo" onerror="this.src='https://placehold.co/60x40/red/white?text=SP'">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Formulaire d'Analyse et Encodage</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">CHU Saint-Pierre / UMC Sint-Pieter - Registre des Risques</p>
+                </div>
+            </div>
+
+            <form id="risk-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                
+                <!-- 1. Classification du dysfonctionnement -->
+                <div class="bg-amber-50/50 p-5 rounded-lg border border-amber-200 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-200 pb-2 flex items-center gap-2">
+                        <span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">1</span> Classification du dysfonctionnement
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quel processus ? *</label>
+                            <select id="processus" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Soins et Prise en charge patient">Soins et Prise en charge patient</option>
+                                <option value="Logistique et Stérilisation">Logistique et Stérilisation</option>
+                                <option value="Médico-technique et Laboratoire">Médico-technique et Laboratoire</option>
+                                <option value="Gestion Administrative et Financière">Gestion Administrative et Financière</option>
+                                <option value="Ressources Humaines et Formation">Ressources Humaines et Formation</option>
+                                <option value="Sécurité, Qualité et Environnement">Sécurité, Qualité et Environnement</option>
+                                <option value="Systèmes d'Information et Technique">Systèmes d'Information et Technique</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quel sous-processus ?</label>
+                            <select id="sous_processus" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Stérilisation centrale de matériel">Stérilisation centrale de matériel</option>
+                                <option value="Bloc opératoire et anesthésie">Bloc opératoire et anesthésie</option>
+                                <option value="Hospitalisation / Soins infirmiers">Hospitalisation / Soins infirmiers</option>
+                                <option value="Pharmacie hospitalière">Pharmacie hospitalière</option>
+                                <option value="Urgences et Admissions">Urgences et Admissions</option>
+                                <option value="Maintenance biomédicale et technique">Maintenance biomédicale et technique</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Description détaillée du dysfonctionnement / Risque *</label>
+                        <textarea id="description" required rows="2" placeholder="Précisez la nature exacte du dysfonctionnement..." 
+                                  class="w-full px-3.5 py-2 border border-slate-300 rounded-lg bg-white text-sm"></textarea>
+                    </div>
+                </div>
+
+                <!-- 2. Actions & Analyse -->
+                <div class="bg-amber-50/50 p-5 rounded-lg border border-amber-200 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-200 pb-2 flex items-center gap-2">
+                        <span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">2</span> Actions & Analyse
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Acteur impliqué</label>
+                            <select id="acteur" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="Personnel Soignant">Personnel Soignant</option>
+                                <option value="Médecin / Praticien">Médecin / Praticien</option>
+                                <option value="Technicien de Stérilisation">Technicien de Stérilisation</option>
+                                <option value="Personnel Administratif">Personnel Administratif</option>
+                                <option value="Service Technique">Service Technique</option>
+                                <option value="Autre / Interdisciplinaire">Autre / Interdisciplinaire</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Cause du dysfonctionnement</label>
+                            <select id="cause" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="Erreur humaine / Procédure non suivie">Erreur humaine / Procédure</option>
+                                <option value="Panne ou dysfonctionnement matériel">Panne matériel</option>
+                                <option value="Défaut de communication">Défaut de communication</option>
+                                <option value="Surcharge / Organisationnel">Surcharge / Organisationnel</option>
+                                <option value="Problème informatique">Problème informatique</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Conséquences</label>
+                            <select id="consequences" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="Aucun impact patient / Quasi-incident">Aucun impact / Quasi-incident</option>
+                                <option value="Impact mineur / Retard">Impact mineur / Retard</option>
+                                <option value="Impact modéré / Soin correctif">Impact modéré</option>
+                                <option value="Impact majeur / Dommage temporaire">Impact majeur</option>
+                                <option value="Impact critique / Atteinte vitale">Impact critique / Atteinte vitale</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Mesure corrective existante ?</label>
+                            <select id="mesure_existante" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="Non">Non</option>
+                                <option value="Oui">Oui</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Mesures correctives à mettre en place</label>
+                            <input type="text" id="action_proposee" placeholder="Actions correctives ou préventives" 
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Évaluation de la criticité -->
+                <div class="bg-amber-50/50 p-5 rounded-lg border border-amber-200 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-200 pb-2 flex items-center gap-2">
+                        <span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">3</span> Évaluation de la Criticité
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Probabilité / Fréquence (P) *</label>
+                            <select id="probabilite" onchange="updateCalculatedScore()" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="1">1 - Très rare (&lt; 1 fois/an)</option>
+                                <option value="2">2 - Rare (1 fois/an à 1 fois/mois)</option>
+                                <option value="3">3 - Occasionnel (1 fois/mois à 1 fois/semaine)</option>
+                                <option value="4">4 - Fréquent (&gt; 1 fois/semaine)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Gravité (G) *</label>
+                            <select id="gravite" onchange="updateCalculatedScore()" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="1">1 - Mineure (Sans séquelle)</option>
+                                <option value="2">2 - Modérée (Allongement séjour)</option>
+                                <option value="3">3 - Majeure (Dommage corporel temporaire)</option>
+                                <option value="4">4 - Critique (Pronostic vital engagé / Décès)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg border border-amber-300 flex items-center justify-between">
+                        <span class="text-sm font-bold text-slate-800">Score de Criticité Global (P × G) :</span>
+                        <span id="score-badge" class="px-4 py-1.5 rounded-full text-xs font-extrabold bg-green-100 text-green-800">
+                            Score : 1 (Faible)
+                        </span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow transition duration-150 flex items-center justify-center gap-2 text-base">
+                    <i data-lucide="send" class="w-5 h-5"></i> Valider et enregistrer l'encodage
+                </button>
+            </form>
+        </section>
+
+        <!-- SECTION 2 : BASE DE DONNÉES DE RÉFÉRENCE -->
+        <section id="section-database" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Base de Données de Référence (Registre)</h2>
+                    <p class="text-sm text-slate-500">Visualisation complète des données centralisées de l'établissement.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="loadSampleData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition">
+                        <i data-lucide="database" class="w-4 h-4"></i> Charger des données démo
+                    </button>
+                    <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exporter Excel (.xlsx)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtres de recherche -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Filtrer par Processus</label>
+                    <select id="filter-processus" onchange="filterDatabase()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                        <option value="">Tous les processus</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Filtrer par Criticité</label>
+                    <select id="filter-score" onchange="filterDatabase()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                        <option value="">Tous les scores</option>
+                        <option value="critical">Critique (≥ 12)</option>
+                        <option value="high">Élevé (6 - 11)</option>
+                        <option value="low">Faible (&lt; 6)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Recherche texte</label>
+                    <input type="text" id="filter-search" oninput="filterDatabase()" placeholder="Rechercher description, acteur..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <!-- Tableau complet -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-slate-50 text-slate-600 font-medium">
+                            <tr>
+                                <th class="py-3 px-4 border-b">ID</th>
+                                <th class="py-3 px-4 border-b">Date</th>
+                                <th class="py-3 px-4 border-b">Processus</th>
+                                <th class="py-3 px-4 border-b">Description</th>
+                                <th class="py-3 px-4 border-b">Acteur</th>
+                                <th class="py-3 px-4 border-b">Conséquences</th>
+                                <th class="py-3 px-4 border-b text-center">Score</th>
+                                <th class="py-3 px-4 border-b">Action corrective</th>
+                                <th class="py-3 px-4 border-b text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-table-body" class="divide-y divide-slate-200">
+                            <!-- Dynamique -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3 : TABLEAU DE BORD ET GRAPHIQUES -->
+        <section id="section-dashboard" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Tableau de Bord & Indicateurs (KPI)</h2>
+                    <p class="text-sm text-slate-500">Analyse visuelle et synthétique du registre des risques - CHU Saint-Pierre.</p>
+                </div>
+                <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exporter Excel
+                </button>
+            </div>
+
+            <!-- Cartes KPI -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Encodages</p>
+                    <p id="kpi-total" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-red-500 uppercase tracking-wider">Risques Critiques (≥12)</p>
+                    <p id="kpi-critical" class="text-3xl font-bold text-red-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-amber-500 uppercase tracking-wider">Risques Élevés (6-11)</p>
+                    <p id="kpi-high" class="text-3xl font-bold text-amber-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-green-500 uppercase tracking-wider">Risques Faibles (&lt;6)</p>
+                    <p id="kpi-low" class="text-3xl font-bold text-green-600 mt-1">0</p>
+                </div>
+            </div>
+
+            <!-- Graphiques -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-base font-semibold text-slate-800 mb-4">Répartition par Niveau de Criticité</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chart-criticite"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-base font-semibold text-slate-800 mb-4">Répartition par Processus</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chart-processus"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        &copy; 2026 CHU Saint-Pierre (UMC Sint-Pieter) - Système de Gestion des Risques
+    </footer>
+
+    <!-- Script Application -->
+    <script>
+        const ADMIN_PASSWORD = "aster2026";
+        let isAdmin = false;
+        let risks = JSON.parse(localStorage.getItem('aster_risks')) || [];
+        let chartCriticite = null;
+        let chartProcessus = null;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            updateCalculatedScore();
+            populateProcessusFilter();
+        });
+
+        function switchTab(tabName) {
+            const secEncode = document.getElementById('section-encode');
+            const secDatabase = document.getElementById('section-database');
+            const secDashboard = document.getElementById('section-dashboard');
+            
+            const btnEncode = document.getElementById('btn-tab-encode');
+            const btnDatabase = document.getElementById('btn-tab-database');
+            const btnDashboard = document.getElementById('btn-tab-dashboard');
+
+            // Reset classes
+            secEncode.classList.add('hidden');
+            secDatabase.classList.add('hidden');
+            secDashboard.classList.add('hidden');
+            
+            btnEncode.className = "px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 transition";
+            btnDatabase.className = "px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 transition";
+            btnDashboard.className = "px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 transition text-amber-300";
+
+            if (tabName === 'encode') {
+                secEncode.classList.remove('hidden');
+                btnEncode.className = "px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2 transition";
+            } else if (tabName === 'database') {
+                secDatabase.classList.remove('hidden');
+                btnDatabase.className = "px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2 transition";
+                renderDatabaseTable(risks);
+            } else if (tabName === 'dashboard') {
+                if (!isAdmin) {
+                    alert("Accès restreint. Veuillez vous connecter en mode Admin.");
+                    switchTab('database');
+                    return;
+                }
+                secDashboard.classList.remove('hidden');
+                btnDashboard.className = "px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2 transition text-amber-300";
+                renderDashboard();
+            }
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        function toggleAdminMode() {
+            if (!isAdmin) {
+                const inputPwd = prompt("Mot de passe Administrateur :");
+                if (inputPwd === null) return;
+                if (inputPwd.trim() === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    updateAdminUI();
+                    switchTab('dashboard');
+                } else {
+                    alert("Mot de passe incorrect.");
+                }
+            } else {
+                isAdmin = false;
+                updateAdminUI();
+                switchTab('encode');
+            }
+        }
+
+        function updateAdminUI() {
+            const badge = document.getElementById('user-badge');
+            const btn = document.getElementById('btn-toggle-admin');
+
+            if (isAdmin) {
+                badge.textContent = "Rôle: Administrateur";
+                badge.className = "text-xs bg-amber-900/40 text-amber-300 px-2.5 py-1 rounded-full border border-amber-700/50 font-medium hidden md:inline";
+                btn.textContent = "Déconnexion";
+                btn.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md font-medium transition";
+            } else {
+                badge.textContent = "Rôle: Utilisateur";
+                badge.className = "text-xs bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300 hidden md:inline";
+                btn.textContent = "Admin";
+                btn.className = "text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium transition";
+            }
+        }
+
+        function updateCalculatedScore() {
+            const p = parseInt(document.getElementById('probabilite').value);
+            const g = parseInt(document.getElementById('gravite').value);
+            const score = p * g;
+            const badge = document.getElementById('score-badge');
+
+            if (score >= 12) {
+                badge.textContent = `Score : ${score} (Critique)`;
+                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-red-100 text-red-800";
+            } else if (score >= 6) {
+                badge.textContent = `Score : ${score} (Élevé)`;
+                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800";
+            } else {
+                badge.textContent = `Score : ${score} (Faible)`;
+                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-green-100 text-green-800";
+            }
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const p = parseInt(document.getElementById('probabilite').value);
+            const g = parseInt(document.getElementById('gravite').value);
+
+            const newRisk = {
+                id: risks.length > 0 ? Math.max(...risks.map(r => r.id)) + 1 : 1,
+                date: new Date().toLocaleDateString('fr-BE'),
+                processus: document.getElementById('processus').value,
+                sous_processus: document.getElementById('sous_processus').value,
+                description: document.getElementById('description').value,
+                acteur: document.getElementById('acteur').value,
+                cause: document.getElementById('cause').value,
+                consequences: document.getElementById('consequences').value,
+                mesure_existante: document.getElementById('mesure_existante').value,
+                probabilite: p,
+                gravite: g,
+                score: p * g,
+                action: document.getElementById('action_proposee').value || 'Aucune définie'
+            };
+
+            risks.push(newRisk);
+            localStorage.setItem('aster_risks', JSON.stringify(risks));
+
+            document.getElementById('risk-form').reset();
+            updateCalculatedScore();
+            populateProcessusFilter();
+            alert(`Risque N°${newRisk.id} enregistré avec succès dans le registre CHU Saint-Pierre !`);
+            switchTab('database');
+        }
+
+        function loadSampleData() {
+            if (risks.length > 0 && !confirm("Charger des données d'exemple va ajouter des exemples au registre. Continuer ?")) return;
+            const samples = [
+                { id: 1, date: "15/01/2026", processus: "Soins et Prise en charge patient", sous_processus: "Hospitalisation", description: "Erreur d'administration de médicament suite à une confusion de dossier", acteur: "Personnel Soignant", cause: "Erreur humaine / Procédure", consequences: "Impact modéré / Soin correctif", mesure_existante: "Non", probabilite: 3, gravite: 3, score: 9, action: "Double vérification infirmière obligatoire" },
+                { id: 2, date: "18/01/2026", processus: "Logistique et Stérilisation", sous_processus: "Stérilisation centrale", description: "Panne de l'autoclave en cours de cycle opératoire", acteur: "Service Technique", cause: "Panne ou dysfonctionnement matériel", consequences: "Impact majeur / Dommage temporaire", mesure_existante: "Oui", probabilite: 2, gravite: 4, score: 8, action: "Maintenance préventive renforcée" },
+                { id: 3, date: "22/01/2026", processus: "Urgences et Admissions", sous_processus: "Urgences", description: "Saturation du service d'urgences et délai d'attente critique", acteur: "Personnel Administratif", cause: "Surcharge / Organisationnel", consequences: "Impact critique / Atteinte vitale", mesure_existante: "Non", probabilite: 4, gravite: 4, score: 16, action: "Activation plan afflux massif et régulation amont" }
+            ];
+            risks = [...risks, ...samples];
+            localStorage.setItem('aster_risks', JSON.stringify(risks));
+            populateProcessusFilter();
+            renderDatabaseTable(risks);
+            alert("Données de démonstration chargées avec succès !");
+        }
+
+        function populateProcessusFilter() {
+            const select = document.getElementById('filter-processus');
+            if (!select) return;
+            const currentVal = select.value;
+            const procs = [...new Set(risks.map(r => r.processus))];
+            
+            select.innerHTML = '<option value="">Tous les processus</option>';
+            procs.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                select.appendChild(opt);
+            });
+            select.value = currentVal;
+        }
+
+        function filterDatabase() {
+            const proc = document.getElementById('filter-processus').value;
+            const scoreFilter = document.getElementById('filter-score').value;
+            const search = document.getElementById('filter-search').value.toLowerCase();
+
+            const filtered = risks.filter(r => {
+                let matchProc = !proc || r.processus === proc;
+                let matchScore = true;
+                if (scoreFilter === 'critical') matchScore = r.score >= 12;
+                else if (scoreFilter === 'high') matchScore = r.score >= 6 && r.score < 12;
+                else if (scoreFilter === 'low') matchScore = r.score < 6;
+
+                let matchSearch = !search || r.description.toLowerCase().includes(search) || r.acteur.toLowerCase().includes(search) || r.processus.toLowerCase().includes(search);
+                return matchProc && matchScore && matchSearch;
+            });
+
+            renderDatabaseTable(filtered);
+        }
+
+        function renderDatabaseTable(data) {
+            const tbody = document.getElementById('db-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">Aucun risque trouvé dans la base de données.</td></tr>`;
+                return;
+            }
+
+            data.forEach(risk => {
+                let badgeClass = "bg-green-100 text-green-800";
+                if (risk.score >= 12) badgeClass = "bg-red-100 text-red-800";
+                else if (risk.score >= 6) badgeClass = "bg-amber-100 text-amber-800";
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono text-xs text-slate-400">#${risk.id}</td>
+                    <td class="py-3 px-4 text-slate-500 whitespace-nowrap">${risk.date}</td>
+                    <td class="py-3 px-4 font-medium text-slate-900">${escapeHtml(risk.processus)}</td>
+                    <td class="py-3 px-4 text-slate-600 max-w-xs truncate">${escapeHtml(risk.description)}</td>
+                    <td class="py-3 px-4 text-slate-600">${escapeHtml(risk.acteur)}</td>
+                    <td class="py-3 px-4 text-slate-600">${escapeHtml(risk.consequences)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">${risk.score}</span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 max-w-xs truncate">${escapeHtml(risk.action)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="deleteRisk(${risk.id})" class="text-red-500 hover:text-red-700 p-1" title="Supprimer">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        function deleteRisk(id) {
+            if (confirm(`Voulez-vous supprimer l'encodage N°${id} ?`)) {
+                risks = risks.filter(r => r.id !== id);
+                localStorage.setItem('aster_risks', JSON.stringify(risks));
+                filterDatabase();
+                populateProcessusFilter();
+            }
+        }
+
+        function renderDashboard() {
+            document.getElementById('kpi-total').textContent = risks.length;
+            document.getElementById('kpi-critical').textContent = risks.filter(r => r.score >= 12).length;
+            document.getElementById('kpi-high').textContent = risks.filter(r => r.score >= 6 && r.score < 12).length;
+            document.getElementById('kpi-low').textContent = risks.filter(r => r.score < 6).length;
+
+            if (typeof Chart === 'undefined') return;
+
+            const ctxCrit = document.getElementById('chart-criticite')?.getContext('2d');
+            const ctxProc = document.getElementById('chart-processus')?.getContext('2d');
+
+            if (!ctxCrit || !ctxProc) return;
+
+            const countLow = risks.filter(r => r.score < 6).length;
+            const countHigh = risks.filter(r => r.score >= 6 && r.score < 12).length;
+            const countCrit = risks.filter(r => r.score >= 12).length;
+
+            if (chartCriticite) chartCriticite.destroy();
+            chartCriticite = new Chart(ctxCrit, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Faible (<6)', 'Élevé (6-11)', 'Critique (≥12)'],
+                    datasets: [{
+                        data: [countLow, countHigh, countCrit],
+                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const procCounts = {};
+            risks.forEach(r => procCounts[r.processus] = (procCounts[r.processus] || 0) + 1);
+
+            if (chartProcessus) chartProcessus.destroy();
+            chartProcessus = new Chart(ctxProc, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(procCounts),
+                    datasets: [{
+                        label: 'Risques encodés',
+                        data: Object.values(procCounts),
+                        backgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function exportExcel() {
+            if (risks.length === 0) {
+                alert("Aucune donnée disponible à exporter.");
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                alert("Bibliothèque d'export en cours de chargement, réessayez.");
+                return;
+            }
+
+            const dataForExcel = risks.map(r => ({
+                "ID": r.id,
+                "Date": r.date,
+                "Processus": r.processus,
+                "Sous-processus": r.sous_processus,
+                "Description": r.description,
+                "Acteur Impliqué": r.acteur,
+                "Cause": r.cause,
+                "Conséquences": r.consequences,
+                "Mesure Existante": r.mesure_existante,
+                "Probabilité (P)": r.probabilite,
+                "Gravité (G)": r.gravite,
+                "Score Criticité (P*G)": r.score,
+                "Niveau de Risque": r.score >= 12 ? 'Critique' : (r.score >= 6 ? 'Élevé' : 'Faible'),
+                "Action Corrective": r.action
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Registre des Risques");
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `CHU_Saint_Pierre_Registre_Risques_${dateStr}.xlsx`);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
