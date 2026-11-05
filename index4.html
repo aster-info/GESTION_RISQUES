@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Risques - CHU Saint-Pierre</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (pour l'export Excel .xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full font-sans text-slate-800 flex flex-col">
+
+    <!-- En-tête / Navigation -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="STPIERRE.png" alt="Logo CHU Saint-Pierre" class="h-9 w-auto rounded bg-white p-1 object-contain" id="header-logo">
+                <span class="font-bold text-xl tracking-tight hidden sm:inline">Gestion des Risques - ST PIERRE</span>
+            </div>
+            
+            <nav class="flex items-center space-x-4">
+                <button onclick="switchTab('encode')" id="btn-tab-encode" class="px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Encoder un risque
+                </button>
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 text-amber-300">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Tableau de bord (Admin)
+                </button>
+                <div class="border-l border-slate-700 h-6 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <span id="user-badge" class="text-xs bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300">Rôle: Utilisateur</span>
+                    <button onclick="toggleAdminMode()" id="btn-toggle-admin" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium transition">
+                        Connexion Admin
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenu Principal -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- SECTION 1 : FORMULAIRE D'ENCODAGE FIDÈLE À L'EXCEL -->
+        <section id="section-encode" class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+            
+            <!-- EN-TÊTE FORMULAIRE : LOGO + TITRE -->
+            <div class="border-b border-slate-200 pb-5 mb-6 flex items-center gap-4">
+                <img src="STPIERRE.png" alt="Logo CHU Saint-Pierre" class="h-16 w-auto object-contain" id="form-logo">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Formulaire d'analyse et d'encodage des risques</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">CHU Saint-Pierre / UMC Sint-Pieter</p>
+                </div>
+            </div>
+
+            <form id="risk-form" onsubmit="handleFormSubmit(event)" class="space-y-8">
+                
+                <!-- 1. Classification du dysfonctionnement -->
+                <div class="bg-amber-50/50 p-5 rounded-lg border border-amber-200 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-200 pb-2 flex items-center gap-2">
+                        <span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">1</span> Classification du dysfonctionnement
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quel processus ? *</label>
+                            <select id="processus" required class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Sélectionner un processus --</option>
+                                <option value="Soins et Prise en charge patient">Soins et Prise en charge patient</option>
+                                <option value="Logistique et Stérilisation">Logistique et Stérilisation</option>
+                                <option value="Médico-technique et Laboratoire">Médico-technique et Laboratoire</option>
+                                <option value="Gestion Administrative et Financière">Gestion Administrative et Financière</option>
+                                <option value="Ressources Humaines et Formation">Ressources Humaines et Formation</option>
+                                <option value="Sécurité, Qualité et Environnement">Sécurité, Qualité et Environnement</option>
+                                <option value="Systèmes d'Information et Technique">Systèmes d'Information et Technique</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quel sous-processus ?</label>
+                            <select id="sous_processus" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Sélectionner un sous-processus --</option>
+                                <option value="Stérilisation centrale de matériel">Stérilisation centrale de matériel</option>
+                                <option value="Bloc opératoire et anesthésie">Bloc opératoire et anesthésie</option>
+                                <option value="Hospitalisation / Soins infirmiers">Hospitalisation / Soins infirmiers</option>
+                                <option value="Pharmacie hospitalière">Pharmacie hospitalière</option>
+                                <option value="Urgences et Admissions">Urgences et Admissions</option>
+                                <option value="Maintenance biomédicale et technique">Maintenance biomédicale et technique</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Description détaillée du dysfonctionnement / Risque *</label>
+                        <textarea id="description" required rows="2" placeholder="Précisez la nature exacte du dysfonctionnement..." 
+                                  class="w-full px-3.5 py-2 border border-slate-300 rounded-lg bg-white text-sm"></textarea>
+                    </div>
+                </div>
+
+                <!-- 2. Actions -->
+                <div class="bg-amber-50/50 p-5 rounded-lg border border-amber-200 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-200 pb-2 flex items-center gap-2">
+                        <span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">2
