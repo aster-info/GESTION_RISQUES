@@ -1,76 +1,76 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-50">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Risques - CHU Saint-Pierre</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS (pour l'export Excel .xlsx) -->
+    <!-- SheetJS (XLSX) CDN -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .form-section {
+            background-color: #FFFDE7;
+            border: 1px solid #E0E0E0;
+        }
+        .form-header {
+            color: #1A365D;
+            border-bottom: 2px solid #CBD5E0;
+        }
+    </style>
 </head>
-<body class="h-full font-sans text-slate-800 flex flex-col">
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
-    <!-- En-tête / Navigation -->
-    <header class="bg-slate-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <img src="STPIERRE.png" alt="Logo CHU Saint-Pierre" class="h-9 w-auto rounded bg-white p-1 object-contain" id="header-logo" onerror="this.src='https://placehold.co/40x40/red/white?text=SP'">
-                <span class="font-bold text-xl tracking-tight hidden sm:inline">Gestion des Risques - ST PIERRE</span>
+    <!-- En-tête Principal -->
+    <header class="bg-white shadow-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <!-- Logo CHU Saint-Pierre (SVG fidèle) -->
+                <svg class="h-12 w-auto" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="400" height="120" fill="white"/>
+                    <path d="M20 20 H50 V50 H90 V20 H120 V100 H90 V70 H50 V100 H20 Z" fill="#D32F2F"/>
+                    <path d="M70 65 L95 45 L120 65 L95 85 Z" fill="#E65100"/>
+                    <text x="135" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#D32F2F">CHU Saint-Pierre</text>
+                    <text x="135" y="85" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="#D32F2F">UMC Sint-Pieter</text>
+                </svg>
+                <span class="text-xl font-semibold text-slate-700 hidden sm:inline border-l pl-4 border-slate-300">
+                    Gestion des Risques & Quality Risk Management
+                </span>
             </div>
             
-            <nav class="flex items-center space-x-2 sm:space-x-4">
-                <button onclick="switchTab('encode')" id="btn-tab-encode" class="px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2 transition">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Encoder
+            <!-- Navigation par Onglets -->
+            <nav class="flex space-x-2 mt-2 sm:mt-0">
+                <button onclick="switchTab('encodage')" id="btn-encodage" class="px-4 py-2 rounded-lg font-medium transition-colors bg-blue-700 text-white shadow">
+                    Encodage
                 </button>
-                <button onclick="switchTab('database')" id="btn-tab-database" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 transition">
-                    <i data-lucide="database" class="w-4 h-4"></i> Base de Données
+                <button onclick="switchTab('bd')" id="btn-bd" class="px-4 py-2 rounded-lg font-medium transition-colors bg-white text-slate-700 hover:bg-slate-100">
+                    Base de Données
                 </button>
-                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 text-amber-300 transition">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Tableau de bord
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-lg font-medium transition-colors bg-white text-slate-700 hover:bg-slate-100">
+                    Tableau de Bord
                 </button>
-                <div class="border-l border-slate-700 h-6 mx-1"></div>
-                <div class="flex items-center gap-2">
-                    <span id="user-badge" class="text-xs bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300 hidden md:inline">Rôle: Utilisateur</span>
-                    <button onclick="toggleAdminMode()" id="btn-toggle-admin" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium transition">
-                        Admin
-                    </button>
-                </div>
             </nav>
         </div>
     </header>
 
-    <!-- Contenu Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- SECTION 1 : FORMULAIRE D'ENCODAGE FIDÈLE AU STYLE CHU SAINT-PIERRE -->
-        <section id="section-encode" class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
-            
-            <div class="border-b border-slate-200 pb-5 mb-6 flex items-center gap-4">
-                <img src="STPIERRE.png" alt="Logo CHU Saint-Pierre" class="h-16 w-auto object-contain" id="form-logo" onerror="this.src='https://placehold.co/80x50/red/white?text=CHU+St-Pierre'">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">CHU Saint-Pierre / UMC Sint-Pieter</h2>
-                    <p class="text-sm font-semibold text-red-700 mt-0.5">Stérilisation Centralisée - Analyse des Dysfonctionnements</p>
-                </div>
-            </div>
+    <!-- Conteneur Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
 
-            <form id="risk-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+        <!-- ================= ONGLET 1 : FORMULAIRE D'ENCODAGE ================= -->
+        <section id="tab-encodage" class="space-y-6">
+            <form id="riskForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
                 
-                <!-- 1. Classification du dysfonctionnement (Menu cascade) -->
-                <div class="bg-[#FFFDE7] p-5 rounded-lg border border-amber-300 space-y-4">
-                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-300 pb-2 flex items-center gap-2">
-                        <span class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded">1</span> Classification du dysfonctionnement
-                    </h3>
+                <!-- SECTION 1: Classification -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">1 Classification du dysfonctionnement</h2>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Quel processus ? *</label>
-                            <select id="processus" required onchange="onProcessusChange()" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-amber-500 shadow-sm">
-                                <option value="">-- Sélectionner le processus --</option>
+                            <label for="processus" class="block text-sm font-semibold text-slate-700 mb-1">Quel processus ? *</label>
+                            <select id="processus" onchange="populateSubProcesses()" required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500">
+                                <option value="">-- Sélectionner un processus --</option>
                                 <option value="Réception">Réception</option>
                                 <option value="Lavage / Désinfection">Lavage / Désinfection</option>
                                 <option value="Contrôle">Contrôle</option>
@@ -79,614 +79,42 @@
                                 <option value="Transport/lavage des armoires">Transport/lavage des armoires</option>
                             </select>
                         </div>
+                        
                         <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Quel sous-processus ? *</label>
-                            <select id="sous_processus" required onchange="onSousProcessusChange()" disabled class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-amber-500 shadow-sm disabled:bg-slate-100 disabled:text-slate-400">
-                                <option value="">-- Veuillez d'abord choisir un processus --</option>
+                            <label for="sousProcessus" class="block text-sm font-semibold text-slate-700 mb-1">Quel sous-processus ? *</label>
+                            <select id="sousProcessus" onchange="populateDysfunctions()" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                <option value="">-- Sélectionner d'abord un processus --</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-800 mb-1">Quel dysfonctionnement spécifique ? *</label>
-                        <select id="dysfonctionnement_specifique" required disabled class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-amber-500 shadow-sm disabled:bg-slate-100 disabled:text-slate-400">
-                            <option value="">-- Veuillez d'abord choisir un sous-processus --</option>
+                        <label for="dysfonctionnement" class="block text-sm font-semibold text-slate-700 mb-1">Quel dysfonctionnement spécifique ? *</label>
+                        <select id="dysfonctionnement" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                            <option value="">-- Sélectionner d'abord un sous-processus --</option>
                         </select>
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Remarques ou précisions complémentaires (Optionnel)</label>
-                        <textarea id="description" rows="2" placeholder="Précisez la situation exacte ou les détails de l'événement..." 
-                                  class="w-full px-3.5 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm"></textarea>
-                    </div>
                 </div>
 
-                <!-- 2. Actions -->
-                <div class="bg-[#FFFDE7] p-5 rounded-lg border border-amber-300 space-y-4">
-                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-300 pb-2 flex items-center gap-2">
-                        <span class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded">2</span> Actions
-                    </h3>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- SECTION 2: Actions & Causes -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">2 Actions</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Acteur professionnel impliqué</label>
-                            <select id="acteur" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
+                            <label for="acteur" class="block text-sm font-semibold text-slate-700 mb-1">Acteur professionnel impliqué</label>
+                            <select id="acteur" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
                                 <option value="Agent de stérilisation">Agent de stérilisation</option>
-                                <option value="Infirmière de bloc">Infirmière de bloc</option>
-                                <option value="Responsable de matériel">Responsable de matériel</option>
-                                <option value="Chirurgien / Praticien">Chirurgien / Praticien</option>
-                                <option value="Technicien de maintenance">Technicien de maintenance</option>
-                                <option value="Brancardier / Transporteur">Brancardier / Transporteur</option>
+                                <option value="Infirmier / Soignant">Infirmier / Soignant</option>
+                                <option value="Technicien biomédical">Technicien biomédical</option>
+                                <option value="Prestataire externe">Prestataire externe</option>
                             </select>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Cause du dysfonctionnement</label>
-                            <select id="cause" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
+                            <label for="cause" class="block text-sm font-semibold text-slate-700 mb-1">Cause du dysfonctionnement</label>
+                            <select id="cause" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
                                 <option value="Cause humaine">Cause humaine</option>
-                                <option value="Cause matérielle">Cause matérielle</option>
-                                <option value="Défaut d'organisation">Défaut d'organisation</option>
-                                <option value="Panne équipement">Panne équipement</option>
-                                <option value="Erreur de procédure">Erreur de procédure</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Conséquences du dysfonctionnement</label>
-                            <select id="consequences" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                                <option value="Aucun impact direct (Non-conformité détectée)">Aucun impact direct</option>
-                                <option value="Retard de livraison au bloc">Retard de livraison au bloc</option>
-                                <option value="Annulation ou report d'intervention">Annulation ou report d'intervention</option>
-                                <option value="Risque infectieux / Non-stérilité">Risque infectieux / Non-stérilité</option>
-                                <option value="Détérioration du matériel">Détérioration du matériel</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Mesure corrective existante ?</label>
-                            <select id="mesure_existante" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                                <option value="Non">Non</option>
-                                <option value="Oui">Oui</option>
-                                <option value="En cours">En cours</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Si oui, expliquez les mesures déjà en place</label>
-                            <input type="text" id="mesures_en_place" placeholder="Description des procédures appliquées" 
-                                   class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Quelles sont les mesures à mettre en place ?</label>
-                            <input type="text" id="action_proposee" placeholder="Actions correctives proposées" 
-                                   class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Évaluation de la criticité résiduelle -->
-                <div class="bg-[#FFFDE7] p-5 rounded-lg border border-amber-300 space-y-4">
-                    <h3 class="text-base font-bold text-slate-900 border-b border-amber-300 pb-2 flex items-center gap-2">
-                        <span class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded">3</span> Évaluation de la criticité résiduelle
-                    </h3>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Coefficient de maîtrise du dysfonctionnement</label>
-                            <select id="maitrise" onchange="updateCalculatedScore()" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                                <option value="1">1 - Très bien maîtrisé (Procédure claire et automatique)</option>
-                                <option value="2">2 - Maîtrisé (Moyen régulier)</option>
-                                <option value="3">3 - Faiblement maîtrisé (Contrôle ponctuel)</option>
-                                <option value="4">4 - Non maîtrisé (Absence de procédure)</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-800 mb-1">Coefficient de non-détection du dysfonctionnement</label>
-                            <select id="detection" onchange="updateCalculatedScore()" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                                <option value="1">1 - Détection immédiate et sûre</option>
-                                <option value="2">2 - Détection probable avant utilisation</option>
-                                <option value="3">3 - Détection difficile</option>
-                                <option value="4">4 - Indétectable avant impact</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-amber-200 pt-3">
-                        <p class="text-xs font-bold text-slate-700 uppercase mb-2">Évaluation de la criticité totale</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Fréquence (F)</label>
-                                <select id="probabilite" onchange="updateCalculatedScore()" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                                    <option value="1">1 - Très rare (&lt; 1 fois/an)</option>
-                                    <option value="2">2 - Occasionnel (1 fois/mois)</option>
-                                    <option value="3">3 - Fréquent (1 fois/semaine)</option>
-                                    <option value="4">4 - Très fréquent (Quotidien)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Gravité (G)</label>
-                                <select id="gravite" onchange="updateCalculatedScore()" class="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm shadow-sm">
-                                    <option value="1">1 - Mineure (Pas d'impact de soin)</option>
-                                    <option value="2">2 - Modérée (Retard ou reprise de soin)</option>
-                                    <option value="3">3 - Majeure (Infection ou préjudice matériel lourd)</option>
-                                    <option value="4">4 - Critique (Atteinte vitale ou dommage permanent)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-4 rounded-lg border border-amber-300 flex items-center justify-between shadow-sm">
-                        <span class="text-sm font-bold text-slate-800">Score de Criticité Résiduelle (F × G × M × D) :</span>
-                        <span id="score-badge" class="px-4 py-1.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800">
-                            Score : 1 (Faible)
-                        </span>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pt-2">
-                    <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-8 py-3 rounded-lg shadow-md transition flex items-center gap-2 text-base">
-                        <i data-lucide="plus-circle" class="w-5 h-5"></i> Ajouter
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- SECTION 2 : BASE DE DONNÉES DE RÉFÉRENCE -->
-        <section id="section-database" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Base de Données de Référence (Registre)</h2>
-                    <p class="text-sm text-slate-500">Visualisation complète des données centralisées de l'établissement.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="loadSampleData()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 transition">
-                        <i data-lucide="database" class="w-4 h-4"></i> Charger des données démo
-                    </button>
-                    <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exporter Excel (.xlsx)
-                    </button>
-                </div>
-            </div>
-
-            <!-- Filtres de recherche -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Filtrer par Processus</label>
-                    <select id="filter-processus" onchange="filterDatabase()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                        <option value="">Tous les processus</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Filtrer par Criticité</label>
-                    <select id="filter-score" onchange="filterDatabase()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                        <option value="">Tous les scores</option>
-                        <option value="critical">Critique (≥ 12)</option>
-                        <option value="high">Élevé (6 - 11)</option>
-                        <option value="low">Faible (&lt; 6)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Recherche texte</label>
-                    <input type="text" id="filter-search" oninput="filterDatabase()" placeholder="Rechercher description, acteur..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                </div>
-            </div>
-
-            <!-- Tableau complet -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
-                        <thead class="bg-slate-50 text-slate-600 font-medium">
-                            <tr>
-                                <th class="py-3 px-4 border-b">ID</th>
-                                <th class="py-3 px-4 border-b">Date</th>
-                                <th class="py-3 px-4 border-b">Processus / Sous-processus</th>
-                                <th class="py-3 px-4 border-b">Dysfonctionnement</th>
-                                <th class="py-3 px-4 border-b">Acteur / Cause</th>
-                                <th class="py-3 px-4 border-b text-center">Score</th>
-                                <th class="py-3 px-4 border-b">Action corrective</th>
-                                <th class="py-3 px-4 border-b text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="db-table-body" class="divide-y divide-slate-200">
-                            <!-- Dynamique -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION 3 : TABLEAU DE BORD ET GRAPHIQUES -->
-        <section id="section-dashboard" class="hidden space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Tableau de Bord & Indicateurs (KPI)</h2>
-                    <p class="text-sm text-slate-500">Analyse visuelle et synthétique du registre des risques - CHU Saint-Pierre.</p>
-                </div>
-                <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exporter Excel
-                </button>
-            </div>
-
-            <!-- Cartes KPI -->
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Encodages</p>
-                    <p id="kpi-total" class="text-3xl font-bold text-slate-900 mt-1">0</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-xs font-medium text-red-500 uppercase tracking-wider">Risques Critiques (≥12)</p>
-                    <p id="kpi-critical" class="text-3xl font-bold text-red-600 mt-1">0</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-xs font-medium text-amber-500 uppercase tracking-wider">Risques Élevés (6-11)</p>
-                    <p id="kpi-high" class="text-3xl font-bold text-amber-600 mt-1">0</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-xs font-medium text-green-500 uppercase tracking-wider">Risques Faibles (&lt;6)</p>
-                    <p id="kpi-low" class="text-3xl font-bold text-green-600 mt-1">0</p>
-                </div>
-            </div>
-
-            <!-- Graphiques -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="text-base font-semibold text-slate-800 mb-4">Répartition par Niveau de Criticité</h3>
-                    <div class="h-64 flex items-center justify-center">
-                        <canvas id="chart-criticite"></canvas>
-                    </div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="text-base font-semibold text-slate-800 mb-4">Répartition par Processus</h3>
-                    <div class="h-64 flex items-center justify-center">
-                        <canvas id="chart-processus"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        &copy; 2026 CHU Saint-Pierre (UMC Sint-Pieter) - Système de Gestion des Risques
-    </footer>
-
-    <!-- Script Application -->
-    <script>
-        const ADMIN_PASSWORD = "aster2026";
-        let isAdmin = false;
-        let risks = JSON.parse(localStorage.getItem('aster_risks')) || [];
-        let chartCriticite = null;
-        let chartProcessus = null;
-
-        // Structure hiérarchique stricte des processus de Stérilisation
-        const HIERARCHY_DATA = {
-            "Réception": {
-                "Traçabilité": [
-                    "Non-scannage des armoires de transport",
-                    "Erreur de saisie dans le logiciel de traçabilité",
-                    "Étiquette d'identification illisible ou manquante"
-                ],
-                "Tri/Prélavage": [
-                    "Présence de piquants/tranchants non neutralisés",
-                    "Matériel immergé dans un produit inadapté",
-                    "Erreur d'aiguillage entre matériel lavable et non lavable"
-                ],
-                "Enregistrement des données": [
-                    "Absence de bon de livraison de la composante souillée",
-                    "Données patient manquantes sur la fiche de retour"
-                ],
-                "Contrôle d'entrée": [
-                    "Délai d'acheminement dépassé après utilisation",
-                    "Matériel détérioré non signalé à l'arrivée"
-                ]
-            },
-            "Lavage / Désinfection": {
-                "Préparation d'un rack de lavage": [
-                    "Chargement incorrect du rack (chevauchement)",
-                    "Canules et corps creux non raccordés aux injecteurs",
-                    "Rack inapproprié au type de dispositif"
-                ],
-                "Mise en laveur-désinfecteur": [
-                    "Choix du mauvais programme de lavage",
-                    "Niveau de détergent suffisant non vérifié",
-                    "Surcharge de la cuve du laveur"
-                ],
-                "Validation des cycles de laveur-désinfecteur": [
-                    "Interruption non justifiée du cycle",
-                    "Non-validation des paramètres T°/temps",
-                    "Ticket de lavage non signé"
-                ],
-                "Déchargement laveur-désinfecteur": [
-                    "Contrôle d'humidité non effectué",
-                    "Mélange matériel propre / matériel souillé lors du déchargement"
-                ],
-                "Arrivée des armoires sales": [
-                    "Armoire sale non nettoyée avant retour",
-                    "Défaut d'étanchéité de la porte d'armoire"
-                ],
-                "Traçabilité": [
-                    "Non-association du numéro de cycle au lot",
-                    "Défaut de transmission des alertes de cycle"
-                ],
-                "Essai": [
-                    "Test protéique / test de lavage non conforme non tracé",
-                    "Non-réalisation du test de contrôle périodique"
-                ]
-            },
-            "Contrôle": {
-                "Inspection visuelle": [
-                    "Absence de détection de souillures résiduelles",
-                    "Non-détection de bavures ou de corrosion"
-                ],
-                "Contrôle de propreté": [
-                    "Test résidu de protéines positif",
-                    "Absence de séchage complet des articulations"
-                ],
-                "Test de fonctionnement": [
-                    "Ciseaux ne coupant pas (usure)",
-                    "Mors de pinces décalés ou bloqués"
-                ],
-                "Gestion du matériel détérioré": [
-                    "Réintroduction d'un instrument endommagé",
-                    "Non-isolation de la composition incomplète"
-                ]
-            },
-            "Conditionnement": {
-                "Emballage individuel": [
-                    "Soudure de la gaine incomplète ou trouée",
-                    "Sens de pelage non respecté",
-                    "Pochette trop petite sollicitant trop les coutures"
-                ],
-                "Conditionnement en conteneur": [
-                    "Filtre conteneur absent ou mal positionné",
-                    "Témoin de passage chimique absent dans la boîte",
-                    "Joint de couvercle usé ou cassé"
-                ],
-                "Étiquetage / Traçabilité": [
-                    "Date de péremption incorrecte sur l'étiquette",
-                    "Code-barres mal imprimé"
-                ],
-                "Composition des boîtes": [
-                    "Instrument manquant non remplacé",
-                    "Intrusion d'un instrument n'appartenant pas au set"
-                ]
-            },
-            "Stérilisation": {
-                "Chargement de l'autoclave": [
-                    "Encombrement des paniers (dépassement des bords)",
-                    "Mélange inadéquat d'emballages textiles et conteneurs",
-                    "Contact direct entre charge et paroi du stérilisateur"
-                ],
-                "Lancement / Validation de cycle": [
-                    "Sélection du mauvais barème de stérilisation (ex: Prion 134°C)",
-                    "Échec du test de Bowie-Dick quotidien",
-                    "Non-conformité de la courbe de pression/température"
-                ],
-                "Déchargement autoclave": [
-                    "Toucher du matériel avant refroidissement complet",
-                    "Présence de condensat / humidité sur la charge (charge mouillée)"
-                ],
-                "Libération de charge": [
-                    "Signature de libération sans vérification des intégrateurs",
-                    "Mise en distribution d'une charge non libérée"
-                ]
-            },
-            "Transport/lavage des armoires": {
-                "Lavage des armoires": [
-                    "Absence de désinfection interne de l'armoire de transport",
-                    "Armoire mouillée utilisée pour du matériel stérile"
-                ],
-                "Transport matériel propre": [
-                    "Circuit propre croisant le circuit souillé",
-                    "Choc durant le transport détériorant le conditionnement"
-                ],
-                "Transport matériel souillé": [
-                    "Absence d'utilisation d'armoire fermée pour le souillé",
-                    "Fuite de liquide biologique durant le transit"
-                ]
-            }
-        };
-
-        // Gestion de la cascade Processus -> Sous-processus
-        function onProcessusChange() {
-            const procSelect = document.getElementById('processus');
-            const subSelect = document.getElementById('sous_processus');
-            const dysSelect = document.getElementById('dysfonctionnement_specifique');
-            const val = procSelect.value;
-
-            subSelect.innerHTML = '<option value="">-- Sélectionner un sous-processus --</option>';
-            dysSelect.innerHTML = '<option value="">-- Veuillez d'abord choisir un sous-processus --</option>';
-            dysSelect.disabled = true;
-
-            if (val && HIERARCHY_DATA[val]) {
-                subSelect.disabled = false;
-                Object.keys(HIERARCHY_DATA[val]).forEach(sub => {
-                    const opt = document.createElement('option');
-                    opt.value = sub;
-                    opt.textContent = sub;
-                    subSelect.appendChild(opt);
-                });
-            } else {
-                subSelect.disabled = true;
-                subSelect.innerHTML = '<option value="">-- Veuillez d'abord choisir un processus --</option>';
-            }
-        }
-
-        // Gestion de la cascade Sous-processus -> Dysfonctionnement spécifique
-        function onSousProcessusChange() {
-            const procSelect = document.getElementById('processus');
-            const subSelect = document.getElementById('sous_processus');
-            const dysSelect = document.getElementById('dysfonctionnement_specifique');
-
-            const pVal = procSelect.value;
-            const sVal = subSelect.value;
-
-            dysSelect.innerHTML = '<option value="">-- Sélectionner le dysfonctionnement --</option>';
-
-            if (pVal && sVal && HIERARCHY_DATA[pVal] && HIERARCHY_DATA[pVal][sVal]) {
-                dysSelect.disabled = false;
-                HIERARCHY_DATA[pVal][sVal].forEach(dys => {
-                    const opt = document.createElement('option');
-                    opt.value = dys;
-                    opt.textContent = dys;
-                    dysSelect.appendChild(opt);
-                });
-            } else {
-                dysSelect.disabled = true;
-                dysSelect.innerHTML = '<option value="">-- Veuillez d'abord choisir un sous-processus --</option>';
-            }
-        }
-
-        // Calcul dynamique de la criticité résiduelle (F * G * M * D)
-        function updateCalculatedScore() {
-            const f = parseInt(document.getElementById('probabilite').value) || 1;
-            const g = parseInt(document.getElementById('gravite').value) || 1;
-            const m = parseInt(document.getElementById('maitrise').value) || 1;
-            const d = parseInt(document.getElementById('detection').value) || 1;
-
-            const score = f * g * m * d;
-            const badge = document.getElementById('score-badge');
-
-            if (score > 24) {
-                badge.textContent = `Score : ${score} (Critique - Action Immédiate)`;
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-red-100 text-red-800 border border-red-300";
-            } else if (score >= 16) {
-                badge.textContent = `Score : ${score} (Orange - Risque Élevé)`;
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-orange-100 text-orange-800 border border-orange-300";
-            } else if (score >= 8) {
-                badge.textContent = `Score : ${score} (Jaune - Risque Modéré)`;
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300";
-            } else {
-                badge.textContent = `Score : ${score} (Vert - Risque Faible)`;
-                badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300";
-            }
-        }
-
-        function handleFormSubmit(e) {
-            e.preventDefault();
-            const f = parseInt(document.getElementById('probabilite').value);
-            const g = parseInt(document.getElementById('gravite').value);
-            const m = parseInt(document.getElementById('maitrise').value);
-            const d = parseInt(document.getElementById('detection').value);
-
-            const dysSpecif = document.getElementById('dysfonctionnement_specifique').value;
-            const rem = document.getElementById('description').value;
-
-            const newRisk = {
-                id: risks.length > 0 ? Math.max(...risks.map(r => r.id)) + 1 : 1,
-                date: new Date().toLocaleDateString('fr-BE'),
-                processus: document.getElementById('processus').value,
-                sous_processus: document.getElementById('sous_processus').value,
-                dysfonctionnement: dysSpecif,
-                description: rem || dysSpecif,
-                acteur: document.getElementById('acteur').value,
-                cause: document.getElementById('cause').value,
-                consequences: document.getElementById('consequences').value,
-                mesure_existante: document.getElementById('mesure_existante').value,
-                mesures_en_place: document.getElementById('mesures_en_place').value || 'Aucune',
-                probabilite: f,
-                gravite: g,
-                maitrise: m,
-                detection: d,
-                score: f * g * m * d,
-                action: document.getElementById('action_proposee').value || 'Aucune définie'
-            };
-
-            risks.push(newRisk);
-            localStorage.setItem('aster_risks', JSON.stringify(risks));
-
-            document.getElementById('risk-form').reset();
-            onProcessusChange();
-            updateCalculatedScore();
-            populateProcessusFilter();
-            alert(`Risque N°${newRisk.id} enregistré avec succès dans le registre CHU Saint-Pierre !`);
-            switchTab('database');
-        }
-
-        function renderDatabaseTable(data) {
-            const tbody = document.getElementById('db-table-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">Aucun risque trouvé dans la base de données.</td></tr>`;
-                return;
-            }
-
-            data.forEach(risk => {
-                let badgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
-                if (risk.score > 24) badgeClass = "bg-red-100 text-red-800 border-red-200";
-                else if (risk.score >= 16) badgeClass = "bg-orange-100 text-orange-800 border-orange-200";
-                else if (risk.score >= 8) badgeClass = "bg-amber-100 text-amber-800 border-amber-200";
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="py-3 px-4 font-mono text-xs text-slate-400">#${risk.id}</td>
-                    <td class="py-3 px-4 text-slate-500 whitespace-nowrap">${risk.date}</td>
-                    <td class="py-3 px-4 font-medium text-slate-900">
-                        <div>${escapeHtml(risk.processus)}</div>
-                        <div class="text-xs text-slate-500 font-normal">${escapeHtml(risk.sous_processus || '')}</div>
-                    </td>
-                    <td class="py-3 px-4 text-slate-700 max-w-xs">${escapeHtml(risk.dysfonctionnement || risk.description)}</td>
-                    <td class="py-3 px-4 text-slate-600 text-xs">
-                        <div class="font-semibold">${escapeHtml(risk.acteur)}</div>
-                        <div class="text-slate-400">${escapeHtml(risk.cause)}</div>
-                    </td>
-                    <td class="py-3 px-4 text-center">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold border ${badgeClass}">${risk.score}</span>
-                    </td>
-                    <td class="py-3 px-4 text-slate-600 max-w-xs truncate text-xs">${escapeHtml(risk.action)}</td>
-                    <td class="py-3 px-4 text-center">
-                        <button onclick="deleteRisk(${risk.id})" class="text-red-500 hover:text-red-700 p-1" title="Supprimer">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            if (window.lucide) {
-                lucide.createIcons();
-            }
-        }
-
-        function loadSampleData() {
-            if (risks.length > 0 && !confirm("Charger des données d'exemple va ajouter des exemples au registre. Continuer ?")) return;
-            const samples = [
-                { id: 1, date: "15/01/2026", processus: "Lavage / Désinfection", sous_processus: "Préparation d'un rack de lavage", dysfonctionnement: "Canules et corps creux non raccordés aux injecteurs", description: "Oubli de raccordement injecteur sur 2 canules d'aspiration", acteur: "Agent de stérilisation", cause: "Cause humaine", consequences: "Risque infectieux / Non-stérilité", mesure_existante: "Non", mesures_en_place: "", probabilite: 3, gravite: 3, maitrise: 2, detection: 2, score: 36, action: "Sensibilisation et check-list avant lancement" },
-                { id: 2, date: "18/01/2026", processus: "Stérilisation", sous_processus: "Lancement / Validation de cycle", dysfonctionnement: "Échec du test de Bowie-Dick quotidien", description: "Bowie-Dick non conforme sur l'autoclave N°2", acteur: "Technicien de maintenance", cause: "Panne équipement", consequences: "Retard de livraison au bloc", mesure_existante: "Oui", mesures_en_place: "Blocage automatique du cycle", probabilite: 1, gravite: 4, maitrise: 1, detection: 1, score: 4, action: "Remplacement de l'électrovanne de vide" }
-            ];
-            risks = [...risks, ...samples];
-            localStorage.setItem('aster_risks', JSON.stringify(risks));
-            populateProcessusFilter();
-            renderDatabaseTable(risks);
-            alert("Exemples réels de stérilisation chargés avec succès !");
-        }
-
-        // Rest of scripts remains compatible
-                "Gravité (G)": r.gravite,
-                "Score Criticité (P*G)": r.score,
-                "Niveau de Risque": r.score >= 12 ? 'Critique' : (r.score >= 6 ? 'Élevé' : 'Faible'),
-                "Action Corrective": r.action
-            }));
-
-            const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Registre des Risques");
-
-            const dateStr = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(workbook, `CHU_Saint_Pierre_Registre_Risques_${dateStr}.xlsx`);
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    </script>
-</body>
-</html>
+                                <option value="Panne d'équipement">Panne d'équipement</option>
