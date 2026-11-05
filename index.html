@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Risques - ASTER</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (pour l'export Excel .xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full font-sans text-slate-800 flex flex-col">
+
+    <!-- En-tête / Navigation -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="shield-alert" class="w-7 h-7 text-indigo-400"></i>
+                <span class="font-bold text-xl tracking-tight">Gestion des Risques</span>
+            </div>
+            
+            <nav class="flex items-center space-x-4">
+                <button onclick="switchTab('encode')" id="btn-tab-encode" class="px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Encoder un risque
+                </button>
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 text-amber-300">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Tableau de bord (Admin)
+                </button>
+                <div class="border-l border-slate-700 h-6 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <span id="user-badge" class="text-xs bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300">Rôle: Utilisateur</span>
+                    <button onclick="toggleAdminMode()" id="btn-toggle-admin" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium transition">
+                        Connexion Admin
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenu Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- SECTION 1 : FORMULAIRE D'ENCODAGE -->
+        <section id="section-encode" class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <i data-lucide="file-plus" class="text-indigo-600"></i> Encoder un nouveau risque
+            </h2>
+            <p class="text-sm text-slate-500 mb-6">Renseignez les détails du risque identifié. L'enregistrement met à jour instantanément le registre global.</p>
+
+            <form id="risk-form" onsubmit="handleFormSubmit(event)" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Processus / Service concerné *</label>
+                    <input type="text" id="processus" required placeholder="Ex: Stérilisation Centralisée, Bloc Opératoire" 
+                           class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Intitulé / Description du risque *</label>
+                    <textarea id="description" required rows="3" placeholder="Description détaillée du risque identifié..." 
+                              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Probabilité (P) *</label>
+                        <select id="probabilite" onchange="updateCalculatedScore()" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <option value="1">1 - Très rare</option>
+                            <option value="2">2 - Rare</option>
+                            <option value="3">3 - Occasionnel</option>
+                            <option value="4">4 - Fréquent</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Gravité (G) *</label>
+                        <select id="gravite" onchange="updateCalculatedScore()" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <option value="1">1 - Mineure</option>
+                            <option value="2">2 - Modérée</option>
+                            <option value="3">3 - Majeure</option>
+                            <option value="4">4 - Critique</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Score calculé -->
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-center justify-between">
+                    <span class="text-sm font-medium text-slate-700">Criticité calculée (P × G) :</span>
+                    <span id="score-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                        Score : 1 (Faible)
+                    </span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mesure de prévention / Action proposée</label>
+                    <input type="text" id="action" placeholder="Action corrective ou préventive préconisée" 
+                           class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg shadow transition duration-150 flex items-center justify-center gap-2 text-sm">
+                    <i data-lucide="send" class="w-4 h-4"></i> Valider et enregistrer l'encodage
+                </button>
+            </form>
+        </section>
+
+        <!-- SECTION 2 : TABLEAU DE BORD (ADMIN) -->
+        <section id="section-dashboard" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Tableau de Bord Administration</h2>
+                    <p class="text-sm text-slate-500">Vue d'ensemble et analyse du registre des risques.</p>
+                </div>
+                <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Télécharger le fichier Excel (.xlsx)
+                </button>
+            </div>
+
+            <!-- Cartes KPI -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Encodages</p>
+                    <p id="kpi-total" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-red-500 uppercase tracking-wider">Risques Critiques (≥12)</p>
+                    <p id="kpi-critical" class="text-3xl font-bold text-red-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-amber-500 uppercase tracking-wider">Risques Élevés (6-11)</p>
+                    <p id="kpi-high" class="text-3xl font-bold text-amber-600 mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-green-500 uppercase tracking-wider">Risques Faibles (<6)</p>
+                    <p id="kpi-low" class="text-3xl font-bold text-green-600 mt-1">0</p>
+                </div>
+            </div>
+
+            <!-- Graphiques -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-base font-semibold text-slate-800 mb-4">Répartition par Niveau de Criticité</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chart-criticite"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-base font-semibold text-slate-800 mb-4">Répartition par Processus</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chart-processus"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des données -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="text-base font-semibold text-slate-800">Registre Global des Encodages</h3>
+                    <span class="text-xs text-slate-500">Mise à jour en temps réel</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-slate-50 text-slate-600 font-medium">
+                            <tr>
+                                <th class="py-3.5 px-4 border-b">ID</th>
+                                <th class="py-3.5 px-4 border-b">Date</th>
+                                <th class="py-3.5 px-4 border-b">Processus</th>
+                                <th class="py-3.5 px-4 border-b">Description du risque</th>
+                                <th class="py-3.5 px-4 border-b text-center">P</th>
+                                <th class="py-3.5 px-4 border-b text-center">G</th>
+                                <th class="py-3.5 px-4 border-b text-center">Score</th>
+                                <th class="py-3.5 px-4 border-b">Action préconisée</th>
+                                <th class="py-3.5 px-4 border-b text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="risk-table-body" class="divide-y divide-slate-200">
+                            <!-- Dynamique -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        &copy; 2026 ASTER - Système de Gestion des Risques
+    </footer>
+
+    <!-- Script Application -->
+    <script>
+        // Mot de passe Administrateur (modifiable ici)
+        const ADMIN_PASSWORD = "aster2026";
+
+        let isAdmin = false;
+        let risks = JSON.parse(localStorage.getItem('aster_risks')) || [];
+        let chartCriticite = null;
+        let chartProcessus = null;
+
+        // Initialisation au chargement de la page
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            updateCalculatedScore();
+        });
+
+        // Gestion de l'affichage des onglets
+        function switchTab(tabName) {
+            const secEncode = document.getElementById('section-encode');
+            const secDashboard = document.getElementById('section-dashboard');
+            const btnEncode = document.getElementById('btn-tab-encode');
+            const btnDashboard = document.getElementById('btn-tab-dashboard');
+
+            if (tabName === 'dashboard') {
+                if (!isAdmin) {
+                    alert("Accès refusé. Veuillez vous connecter en tant qu'administrateur.");
+                    return;
+                }
+                secEncode.classList.add('hidden');
+                secDashboard.classList.remove('hidden');
+                btnDashboard.className = "px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2 text-amber-300";
+                btnEncode.className = "px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2";
+                renderDashboard();
+            } else {
+                secDashboard.classList.add('hidden');
+                secEncode.classList.remove('hidden');
+                btnEncode.className = "px-3 py-2 rounded-md text-sm font-medium bg-slate-800 flex items-center gap-2";
+                btnDashboard.className = "px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-800 flex items-center gap-2 text-amber-300";
+            }
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // Connexion / Déconnexion Admin sécurisée par mot de passe
+        function toggleAdminMode() {
+            if (!isAdmin) {
+                const inputPwd = prompt("Veuillez saisir le mot de passe Administrateur :");
+                if (inputPwd === null) return; // Annulation
+
+                if (inputPwd.trim() === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    updateAdminUI();
+                    switchTab('dashboard'); // Bascule directe vers le dashboard admin
+                } else {
+                    alert("Mot de passe incorrect.");
+                }
+            } else {
+                isAdmin = false;
+                updateAdminUI();
+                switchTab('encode');
+            }
+        }
+
+        function updateAdminUI() {
+            const badge = document.getElementById('user-badge');
+            const btn = document.getElementById('btn-toggle-admin');
+
+            if (isAdmin) {
+                badge.textContent = "Rôle: Administrateur";
+                badge.className = "text-xs bg-amber-900/40 text-amber-300 px-2.5 py-1 rounded-full border border-amber-700/50 font-medium";
+                btn.textContent = "Déconnexion Admin";
+                btn.className = "text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md font-medium transition";
+            } else {
+                badge.textContent = "Rôle: Utilisateur";
+                badge.className = "text-xs bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300";
+                btn.textContent = "Connexion Admin";
+                btn.className = "text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium transition";
+            }
+        }
+
+        // Calcul dynamique du score de criticité (P * G)
+        function updateCalculatedScore() {
+            const pElem = document.getElementById('probabilite');
+            const gElem = document.getElementById('gravite');
+            if (!pElem || !gElem) return;
+
+            const p = parseInt(pElem.value);
+            const g = parseInt(gElem.value);
+            const score = p * g;
+            const badge = document.getElementById('score-badge');
+
+            if (score >= 12) {
+                badge.textContent = `Score : ${score} (Critique)`;
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800";
+            } else if (score >= 6) {
+                badge.textContent = `Score : ${score} (Élevé)`;
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800";
+            } else {
+                badge.textContent = `Score : ${score} (Faible)`;
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800";
+            }
+        }
+
+        // Soumission du formulaire (Enregistrement et mise à jour du registre)
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const p = parseInt(document.getElementById('probabilite').value);
+            const g = parseInt(document.getElementById('gravite').value);
+
+            const newRisk = {
+                id: risks.length > 0 ? Math.max(...risks.map(r => r.id)) + 1 : 1,
+                date: new Date().toLocaleDateString('fr-BE'),
+                processus: document.getElementById('processus').value,
+                description: document.getElementById('description').value,
+                probabilite: p,
+                gravite: g,
+                score: p * g,
+                action: document.getElementById('action').value || 'Aucune définie'
+            };
+
+            risks.push(newRisk);
+            localStorage.setItem('aster_risks', JSON.stringify(risks));
+
+            document.getElementById('risk-form').reset();
+            updateCalculatedScore();
+            alert(`Risque N°${newRisk.id} enregistré avec succès dans le registre !`);
+        }
+
+        // Rendu du Tableau de Bord (KPIs, Tableau, Graphiques)
+        function renderDashboard() {
+            document.getElementById('kpi-total').textContent = risks.length;
+            document.getElementById('kpi-critical').textContent = risks.filter(r => r.score >= 12).length;
+            document.getElementById('kpi-high').textContent = risks.filter(r => r.score >= 6 && r.score < 12).length;
+            document.getElementById('kpi-low').textContent = risks.filter(r => r.score < 6).length;
+
+            const tbody = document.getElementById('risk-table-body');
+            tbody.innerHTML = '';
+
+            if (risks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400">Aucun risque encodé pour le moment.</td></tr>`;
+            } else {
+                risks.forEach(risk => {
+                    let badgeClass = "bg-green-100 text-green-800";
+                    if (risk.score >= 12) badgeClass = "bg-red-100 text-red-800";
+                    else if (risk.score >= 6) badgeClass = "bg-amber-100 text-amber-800";
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition";
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-mono text-xs text-slate-400">#${risk.id}</td>
+                        <td class="py-3 px-4 text-slate-500 whitespace-nowrap">${risk.date}</td>
+                        <td class="py-3 px-4 font-medium text-slate-900">${escapeHtml(risk.processus)}</td>
+                        <td class="py-3 px-4 text-slate-600">${escapeHtml(risk.description)}</td>
+                        <td class="py-3 px-4 text-center">${risk.probabilite}</td>
+                        <td class="py-3 px-4 text-center">${risk.gravite}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">${risk.score}</span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-600">${escapeHtml(risk.action)}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="deleteRisk(${risk.id})" class="text-red-500 hover:text-red-700 p-1" title="Supprimer">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            renderCharts();
+        }
+
+        // Suppression d'un risque
+        function deleteRisk(id) {
+            if (confirm(`Voulez-vous supprimer l'encodage N°${id} ?`)) {
+                risks = risks.filter(r => r.id !== id);
+                localStorage.setItem('aster_risks', JSON.stringify(risks));
+                renderDashboard();
+            }
+        }
+
+        // Génération des Graphiques Chart.js
+        function renderCharts() {
+            if (typeof Chart === 'undefined') return;
+
+            const ctxCrit = document.getElementById('chart-criticite')?.getContext('2d');
+            const ctxProc = document.getElementById('chart-processus')?.getContext('2d');
+
+            if (!ctxCrit || !ctxProc) return;
+
+            const countLow = risks.filter(r => r.score < 6).length;
+            const countHigh = risks.filter(r => r.score >= 6 && r.score < 12).length;
+            const countCrit = risks.filter(r => r.score >= 12).length;
+
+            if (chartCriticite) chartCriticite.destroy();
+            chartCriticite = new Chart(ctxCrit, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Faible (<6)', 'Élevé (6-11)', 'Critique (≥12)'],
+                    datasets: [{
+                        data: [countLow, countHigh, countCrit],
+                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const procCounts = {};
+            risks.forEach(r => procCounts[r.processus] = (procCounts[r.processus] || 0) + 1);
+
+            if (chartProcessus) chartProcessus.destroy();
+            chartProcessus = new Chart(ctxProc, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(procCounts),
+                    datasets: [{
+                        label: 'Risques encodés',
+                        data: Object.values(procCounts),
+                        backgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // Export Excel (.xlsx) mis à jour avec tous les encodages
+        function exportExcel() {
+            if (risks.length === 0) {
+                alert("Aucune donnée disponible à exporter.");
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                alert("La bibliothèque d'export Excel est en cours de chargement. Veuillez réessayer.");
+                return;
+            }
+
+            const dataForExcel = risks.map(r => ({
+                "ID": r.id,
+                "Date d'encodage": r.date,
+                "Processus / Service": r.processus,
+                "Description du Risque": r.description,
+                "Probabilité (P)": r.probabilite,
+                "Gravité (G)": r.gravite,
+                "Score Criticité (P*G)": r.score,
+                "Niveau de Risque": r.score >= 12 ? 'Critique' : (r.score >= 6 ? 'Élevé' : 'Faible'),
+                "Action Préconisée": r.action
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Registre des Risques");
+
+            worksheet['!cols'] = [
+                { wch: 6 }, { wch: 15 }, { wch: 25 }, { wch: 45 },
+                { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 45 }
+            ];
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `Gestion_des_Risques_ASTER_${dateStr}.xlsx`);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
