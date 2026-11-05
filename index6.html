@@ -27,7 +27,7 @@
     <header class="bg-white shadow-md border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
             <div class="flex items-center space-x-4">
-                <!-- Logo CHU Saint-Pierre (SVG fidèle) -->
+                <!-- Logo CHU Saint-Pierre -->
                 <svg class="h-12 w-auto" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="400" height="120" fill="white"/>
                     <path d="M20 20 H50 V50 H90 V20 H120 V100 H90 V70 H50 V100 H20 Z" fill="#D32F2F"/>
@@ -118,3 +118,98 @@
                                 <option value="">-- Sélectionner --</option>
                                 <option value="Cause humaine">Cause humaine</option>
                                 <option value="Panne d'équipement">Panne d'équipement</option>
+                                <option value="Défaut de consommable">Défaut de consommable</option>
+                                <option value="Défaut de procédure">Défaut de procédure</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="consequence" class="block text-sm font-semibold text-slate-700 mb-1">Conséquences du dysfonctionnement</label>
+                            <select id="consequence" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Retard de livraison bloc">Retard de livraison bloc</option>
+                                <option value="Non-conformité produit">Non-conformité produit</option>
+                                <option value="Risque d'infection (IAAS)">Risque d'infection (IAAS)</option>
+                                <option value="Détérioration matériel">Détérioration matériel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="mesureExistante" class="block text-sm font-semibold text-slate-700 mb-1">Mesure corrective existante ?</label>
+                            <select id="mesureExistante" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="Non">Non</option>
+                                <option value="Oui">Oui</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="mesurePlace" class="block text-sm font-semibold text-slate-700 mb-1">Si oui, expliquez les mesures déjà en place :</label>
+                            <textarea id="mesurePlace" rows="2" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="mesureAPlace" class="block text-sm font-semibold text-slate-700 mb-1">Quelles sont les mesures à mettre en place ?</label>
+                            <textarea id="mesureAPlace" rows="2" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Evaluation Criticité -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">3 Évaluation de la criticité résiduelle</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="maitrise" class="block text-sm font-semibold text-slate-700 mb-1">Coefficient de maîtrise du dysfonctionnement</label>
+                            <select id="maitrise" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="1">1 - Très bien maîtrisé</option>
+                                <option value="2">2 - Moyennement maîtrisé</option>
+                                <option value="3">3 - Peu maîtrisé</option>
+                                <option value="4">4 - Non maîtrisé</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="detection" class="block text-sm font-semibold text-slate-700 mb-1">Coefficient de non-détection du dysfonctionnement</label>
+                            <select id="detection" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="1">1 - Détection immédiate / Systématique</option>
+                                <option value="2">2 - Détection probable</option>
+                                <option value="3">3 - Détection difficile</option>
+                                <option value="4">4 - Indétectable avant utilisation</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-300 rounded-lg p-4 bg-white shadow-inner max-w-xl mx-auto">
+                        <legend class="text-sm font-bold text-slate-700 px-2">Évaluation de la criticité totale</legend>
+                        <div class="grid grid-cols-3 gap-4 text-center items-center mt-2">
+                            <div>
+                                <label for="frequence" class="block text-xs font-semibold text-slate-600">Fréquence (F)</label>
+                                <select id="frequence" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 text-center shadow-sm">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="gravite" class="block text-xs font-semibold text-slate-600">Gravité (G)</label>
+                                <select id="gravite" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 text-center shadow-sm">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg border">
+                                <span class="block text-xs font-semibold text-slate-500">Score de Criticité C</span>
+                                <span id="criticiteResult" class="text-2xl font-extrabold text-green-600">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bouton Submit -->
+                    <div class="mt-6 text-right">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition-transform
