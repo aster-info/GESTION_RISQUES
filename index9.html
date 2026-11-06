@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Risques - ST PIERRE</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .form-section {
+            background-color: #FFFDE7;
+            border: 1px solid #E0E0E0;
+        }
+        .form-header {
+            color: #1A365D;
+            border-bottom: 2px solid #CBD5E0;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+    <!-- En-tête Principal -->
+    <header class="bg-[#0f172a] text-white shadow-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+            
+            <!-- Logo et Titre -->
+            <div class="flex items-center space-x-4">
+                <div class="bg-white px-2 py-1 rounded shadow flex items-center">
+                    <!-- Logo CHU Saint-Pierre -->
+                    <svg class="h-8 w-auto" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="400" height="120" fill="white"/>
+                        <path d="M20 20 H50 V50 H90 V20 H120 V100 H90 V70 H50 V100 H20 Z" fill="#D32F2F"/>
+                        <path d="M70 65 L95 45 L120 65 L95 85 Z" fill="#E65100"/>
+                        <text x="135" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#D32F2F">CHU Saint-Pierre</text>
+                        <text x="135" y="85" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="#D32F2F">UMC Sint-Pieter</text>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold tracking-wide text-white">Gestion des Risques - ST PIERRE</h1>
+            </div>
+            
+            <!-- Navigation par Onglets & Sélecteur de Rôle -->
+            <div class="flex items-center space-x-4 mt-2 sm:mt-0">
+                <nav class="flex space-x-2">
+                    <button onclick="switchTab('encodage')" id="btn-encodage" class="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700 text-white shadow flex items-center space-x-2">
+                        <span>➕ Encodage</span>
+                    </button>
+                    <!-- Visibles uniquement en mode Admin -->
+                    <button onclick="switchTab('bd')" id="btn-bd" class="hidden px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        📁 Base de Données
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="hidden px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        📊 Tableau de bord
+                    </button>
+                </nav>
+
+                <!-- Sélecteur de Rôle (Utilisateur / Admin) -->
+                <div class="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-700">
+                    <button id="role-user" onclick="setRole('user')" class="px-3 py-1 text-xs font-semibold rounded-md transition-all bg-slate-700 text-white">
+                        Rôle: Utilisateur
+                    </button>
+                    <button id="role-admin" onclick="requestAdmin()" class="px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white">
+                        Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteneur Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- ================= ONGLET 1 : FORMULAIRE D'ENCODAGE ================= -->
+        <section id="tab-encodage" class="space-y-6">
+            <form id="riskForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                
+                <!-- SECTION 1: Classification -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">1 Classification du dysfonctionnement</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="processus" class="block text-sm font-semibold text-slate-700 mb-1">Quel processus ? *</label>
+                            <select id="processus" required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500">
+                                <option value="">-- Sélectionner un processus --</option>
+                                <option value="Réception">Réception</option>
+                                <option value="Lavage / Désinfection">Lavage / Désinfection</option>
+                                <option value="Contrôle">Contrôle</option>
+                                <option value="Conditionnement">Conditionnement</option>
+                                <option value="Stérilisation">Stérilisation</option>
+                                <option value="Transport/lavage des armoires">Transport/lavage des armoires</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="sousProcessus" class="block text-sm font-semibold text-slate-700 mb-1">Quel sous-processus ? *</label>
+                            <select id="sousProcessus" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                <option value="">-- Sélectionner d'abord un processus --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="dysfonctionnement" class="block text-sm font-semibold text-slate-700 mb-1">Quel dysfonctionnement spécifique ? *</label>
+                        <select id="dysfonctionnement" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                            <option value="">-- Sélectionner d'abord un sous-processus --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Actions & Causes -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">2 Actions</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label for="acteur" class="block text-sm font-semibold text-slate-700 mb-1">Acteur professionnel impliqué</label>
+                            <select id="acteur" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Agent de stérilisation">Agent de stérilisation</option>
+                                <option value="Infirmier / Soignant">Infirmier / Soignant</option>
+                                <option value="Technicien biomédical">Technicien biomédical</option>
+                                <option value="Prestataire externe">Prestataire externe</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="cause" class="block text-sm font-semibold text-slate-700 mb-1">Cause du dysfonctionnement</label>
+                            <select id="cause" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Cause humaine">Cause humaine</option>
+                                <option value="Panne d'équipement">Panne d'équipement</option>
+                                <option value="Défaut de consommable">Défaut de consommable</option>
+                                <option value="Défaut de procédure">Défaut de procédure</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="consequence" class="block text-sm font-semibold text-slate-700 mb-1">Conséquences du dysfonctionnement</label>
+                            <select id="consequence" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Retard de livraison bloc">Retard de livraison bloc</option>
+                                <option value="Non-conformité produit">Non-conformité produit</option>
+                                <option value="Risque d'infection (IAAS)">Risque d'infection (IAAS)</option>
+                                <option value="Détérioration matériel">Détérioration matériel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="mesureExistante" class="block text-sm font-semibold text-slate-700 mb-1">Mesure corrective existante ?</label>
+                            <select id="mesureExistante" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="Non">Non</option>
+                                <option value="Oui">Oui</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="mesurePlace" class="block text-sm font-semibold text-slate-700 mb-1">Si oui, expliquez les mesures déjà en place :</label>
+                            <textarea id="mesurePlace" rows="2" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="mesureAPlace" class="block text-sm font-semibold text-slate-700 mb-1">Quelles sont les mesures à mettre en place ?</label>
+                            <textarea id="mesureAPlace" rows="2" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Evaluation Criticité -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">3 Évaluation de la criticité résiduelle</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="maitrise" class="block text-sm font-semibold text-slate-700 mb-1">Coefficient de maîtrise du dysfonctionnement</label>
+                            <select id="maitrise" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="1">1 - Très bien maîtrisé</option>
+                                <option value="2">2 - Moyennement maîtrisé</option>
+                                <option value="3">3 - Peu maîtrisé</option>
+                                <option value="4">4 - Non maîtrisé</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="detection" class="block text-sm font-semibold text-slate-700 mb-1">Coefficient de non-détection du dysfonctionnement</label>
+                            <select id="detection" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="1">1 - Détection immédiate / Systématique</option>
+                                <option value="2">2 - Détection probable</option>
+                                <option value="3">3 - Détection difficile</option>
+                                <option value="4">4 - Indétectable avant utilisation</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-300 rounded-lg p-4 bg-white shadow-inner max-w-xl mx-auto">
+                        <legend class="text-sm font-bold text-slate-700 px-2">Évaluation de la criticité totale</legend>
+                        <div class="grid grid-cols-3 gap-4 text-center items-center mt-2">
+                            <div>
+                                <label for="frequence" class="block text-xs font-semibold text-slate-600">Fréquence (F)</label>
+                                <select id="frequence" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 text-center shadow-sm">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="gravite" class="block text-xs font-semibold text-slate-600">Gravité (G)</label>
+                                <select id="gravite" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 text-center shadow-sm">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg border">
+                                <span class="block text-xs font-semibold text-slate-500">Score de Criticité C</span>
+                                <span id="criticiteResult" class="text-2xl font-extrabold text-green-600">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bouton Submit -->
+                    <div class="mt-6 text-right">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition-transform active:scale-95">
+                            Ajouter le dysfonctionnement
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </section>
+
+        <!-- ================= ONGLET 2 : BASE DE DONNÉES (RESTREINT ADMIN) ================= -->
+        <section id="tab-bd" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center space-x-2 w-full md:w-auto">
+                    <input type="text" id="searchInput" oninput="renderTable()" placeholder="Rechercher un dysfonctionnement..." class="border rounded-md px-3 py-2 w-full md:w-64">
+                    <select id="filterProcessus" onchange="renderTable()" class="border rounded-md px-3 py-2">
+                        <option value="">Tous les processus</option>
+                        <option value="Réception">Réception</option>
+                        <option value="Lavage / Désinfection">Lavage / Désinfection</option>
+                        <option value="Contrôle">Contrôle</option>
+                        <option value="Conditionnement">Conditionnement</option>
+                        <option value="Stérilisation">Stérilisation</option>
+                        <option value="Transport/lavage des armoires">Transport/lavage des armoires</option>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button onclick="addSampleData()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-4 py-2 rounded-md transition-colors text-sm">
+                        + Exemple de données
+                    </button>
+                    <!-- Bouton Export Excel visible uniquement en mode Admin -->
+                    <button id="btn-export-excel" onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-md shadow transition-colors text-sm flex items-center space-x-1">
+                        <span>Exporter (.xlsx)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tableau -->
+            <div class="bg-white rounded-xl shadow overflow-hidden border border-slate-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-xs">
+                            <tr>
+                                <th class="p-3">ID</th>
+                                <th class="p-3">Processus</th>
+                                <th class="p-3">Sous-Processus</th>
+                                <th class="p-3">Dysfonctionnement</th>
+                                <th class="p-3">Acteur</th>
+                                <th class="p-3 text-center">F</th>
+                                <th class="p-3 text-center">G</th>
+                                <th class="p-3 text-center">M</th>
+                                <th class="p-3 text-center">ND</th>
+                                <th class="p-3 text-center">Score C</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riskTableBody" class="divide-y divide-slate-200">
+                            <!-- Rempli en JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ONGLET 3 : TABLEAU DE BORD (RESTREINT ADMIN) ================= -->
+        <section id="tab-dashboard" class="hidden space-y-6">
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow border border-slate-200">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Total Risques Encodés</span>
+                    <span id="kpi-total" class="block text-3xl font-extrabold text-slate-800 mt-1">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-slate-200 border-l-4 border-l-red-500">
+                    <span class="text-xs font-bold text-red-500 uppercase">Risques Critiques (C > 24)</span>
+                    <span id="kpi-critique" class="block text-3xl font-extrabold text-red-600 mt-1">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-slate-200 border-l-4 border-l-orange-400">
+                    <span class="text-xs font-bold text-orange-400 uppercase">Risques Élevés (16-24)</span>
+                    <span id="kpi-eleve" class="block text-3xl font-extrabold text-orange-500 mt-1">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-slate-200 border-l-4 border-l-green-500">
+                    <span class="text-xs font-bold text-green-500 uppercase">Risques Maîtrisés (&lt; 8)</span>
+                    <span id="kpi-maitrise" class="block text-3xl font-extrabold text-green-600 mt-1">0</span>
+                </div>
+            </div>
+
+            <!-- Graphiques -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow border border-slate-200">
+                    <h3 class="font-bold text-slate-700 mb-4">Répartition par Niveau de Criticité</h3>
+                    <div class="h-64 flex justify-center relative">
+                        <canvas id="chartCriticite"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow border border-slate-200">
+                    <h3 class="font-bold text-slate-700 mb-4">Dysfonctionnements par Processus</h3>
+                    <div class="h-64 flex justify-center relative">
+                        <canvas id="chartProcessus"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FENÊTRE MODALE DE DÉTAIL D'UN RISQUE -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 transform transition-all">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-lg font-bold">Détails du Risque</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <div id="modalContent" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-sm">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-end">
+                <button onclick="closeModal()" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-5 py-2 rounded-lg text-sm">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT APPLICATION -->
+    <script>
+        let riskDatabase = JSON.parse(localStorage.getItem('chu_risk_db')) || [];
+        let currentRole = 'user'; // 'user' ou 'admin'
+
+        // Référentiel complet
+        const processData = {
+            "Réception": {
+                "Traçabilité": [
+                    "Absence de scan à l'arrivée",
+                    "Erreur d'attribution du set de stérilisation",
+                    "Incohérence fiche de suivi papier / informatique"
+                ],
+                "Tri & Prélavage": [
+                    "Contamination croisée matériel propre/sale",
+                    "Matériel tranchant non sécurisé en bac",
+                    "Absence d'immersion dans la solution détergente"
+                ]
+            },
+            "Lavage / Désinfection": {
+                "Lavage manuel": [
+                    "Insuffisance de brossage et d'écouvillonnage",
+                    "Méconnaissance des procédures de traitement",
+                    "Erreur de choix de type de lavage (manuel/automatisé en laveur-désinfecteur)",
+                    "Non respect de la marche en avant (entrée porte conditionnement)"
+                ],
+                "Préparation d'un rack de lavage": [
+                    "Surcharge du rack de lavage",
+                    "Mauvais positionnement des instruments creux",
+                    "Utilisation d'un produit détergent périmé"
+                ],
+                "Mise en laveur-désinfecteur": [
+                    "Non-connexion des tubulures d'irrigation",
+                    "Erreur de sélection du programme de lavage",
+                    "Interruption prématurée du cycle de lavage"
+                ],
+                "Validation des cycles de laveur-désinfecteur": [
+                    "Validation d'un cycle avec alarme de température",
+                    "Non-archivage du ticket de validation de cycle",
+                    "Absence de contrôle visuel des bras d'aspersion"
+                ],
+                "Déchargement laveur-désinfecteur": [
+                    "Manipulations à chaud sans EPI adéquats",
+                    "Stockage temporaire en zone humide",
+                    "Présence de résidus biologiques après lavage"
+                ],
+                "Arrivée des armoires sales": [
+                    "Armoire de transport souillée non désinfectée",
+                    "Système de verrouillage d'armoire défectueux"
+                ],
+                "Traçabilité": [
+                    "Absence d'association lot lavage / laveur",
+                    "Non-enregistrement du changement de chimie"
+                ],
+                "Essai": [
+                    "Non-réalisation du test de protéine hebdomadaire",
+                    "Echec du test de contrôle de nettoyage"
+                ]
+            },
+            "Contrôle": {
+                "Inspection visuelle & Fonctionnelle": [
+                    "Instrument ébréché non retiré",
+                    "Présence de rouille ou piqûres d'oxydation",
+                    "Défaut d'articulation non détecté"
+                ]
+            },
+            "Conditionnement": {
+                "Mise en sachet / Gainage": [
+                    "Soudure de gaine incomplète ou trouée",
+                    "Emballage sous-dimensionné mettant sous tension la soudure",
+                    "Indicateur physico-chimique absent dans le sachet"
+                ]
+            },
+            "Stérilisation": {
+                "Chargement & Cycle Autoclave": [
+                    "Test VP / Bowie-Dick non conforme validé quand même",
+                    "Incompatibilité des articles chargés avec le cycle vapeur",
+                    "Interruption du cycle de stérilisation"
+                ]
+            },
+            "Transport/lavage des armoires": {
+                "Gestion du parc d'armoires": [
+                    "Rupture de la chaîne du propre durant le transport",
+                    "Erreur de destination du conteneur stérile"
+                ]
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateScore();
+            setRole('user'); // Démarrage par défaut en mode Utilisateur
+
+            // Liaison robuste pour les menus déroulants
+            document.getElementById('processus').addEventListener('change', populateSubProcesses);
+            document.getElementById('sousProcessus').addEventListener('change', populateDysfunctions);
+        });
+
+        // Gestion de l'authentification Admin par mot de passe
+        function requestAdmin() {
+            if (currentRole === 'admin') {
+                if (confirm("Voulez-vous vous déconnecter du mode Administrateur ?")) {
+                    setRole('user');
+                }
+                return;
+            }
+
+            const pwd = prompt("Entrez le mot de passe Administrateur :");
+            if (pwd === "aster2026") {
+                setRole('admin');
+                alert("Mode Administrateur activé avec succès !");
+            } else if (pwd !== null) {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        // Bascule des rôles et affichage des éléments restreints
+        function setRole(role) {
+            currentRole = role;
+            const btnUser = document.getElementById('role-user');
+            const btnAdmin = document.getElementById('role-admin');
+            const btnBd = document.getElementById('btn-bd');
+            const btnDashboard = document.getElementById('btn-dashboard');
+            const btnExportExcel = document.getElementById('btn-export-excel');
+
+            if (role === 'admin') {
+                btnAdmin.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow";
+                btnAdmin.textContent = "Admin (Actif)";
+                btnUser.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
+                
+                // Rendre visible les onglets admin
+                btnBd.classList.remove('hidden');
+                btnDashboard.classList.remove('hidden');
+                if(btnExportExcel) btnExportExcel.classList.remove('hidden');
+            } else {
+                btnUser.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-slate-700 text-white";
+                btnAdmin.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
+                btnAdmin.textContent = "Admin";
+                
+                // Masquer les onglets admin et forcer le retour sur Encodage si on était sur une page admin
+                btnBd.classList.add('hidden');
+                btnDashboard.classList.add('hidden');
+                if(btnExportExcel) btnExportExcel.classList.add('hidden');
+                
+                switchTab('encodage');
+            }
+        }
+
+        // Gestionnaire d'Onglets
+        function switchTab(tabName) {
+            // Sécurité : interdire l'accès aux onglets restreints si on est simple utilisateur
+            if ((tabName === 'bd' || tabName === 'dashboard') && currentRole !== 'admin') {
+                alert("Accès restreint. Veuillez vous connecter en tant qu'administrateur.");
+                return;
+            }
+
+            document.getElementById('tab-encodage').classList.add('hidden');
+            document.getElementById('tab-bd').classList.add('hidden');
+            document.getElementById('tab-dashboard').classList.add('hidden');
+            
+            document.getElementById('btn-encodage').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
+            if(document.getElementById('btn-bd')) document.getElementById('btn-bd').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
+            if(document.getElementById('btn-dashboard')) document.getElementById('btn-dashboard').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabName}`).className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700 text-white shadow';
+
+            if(tabName === 'bd') {
+                renderTable();
+            } else if(tabName === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Remplir le menu Sous-processus
+        function populateSubProcesses() {
+            const proc = document.getElementById('processus').value;
+            const subSelect = document.getElementById('sousProcessus');
+            const dysfSelect = document.getElementById('dysfonctionnement');
+
+            subSelect.innerHTML = '<option value="">-- Sélectionner un sous-processus --</option>';
+            dysfSelect.innerHTML = '<option value="">-- Sélectionner d\'abord un sous-processus --</option>';
+            dysfSelect.disabled = true;
+
+            if(proc && processData[proc]) {
+                subSelect.disabled = false;
+                Object.keys(processData[proc]).forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    subSelect.appendChild(opt);
+                });
+            } else {
+                subSelect.disabled = true;
+            }
+        }
+
+        // Remplir le menu Dysfonctionnement
+        function populateDysfunctions() {
+            const proc = document.getElementById('processus').value;
+            const sub = document.getElementById('sousProcessus').value;
+            const dysfSelect = document.getElementById('dysfonctionnement');
+
+            dysfSelect.innerHTML = '<option value="">-- Sélectionner un dysfonctionnement --</option>';
+
+            if(proc && sub && processData[proc] && processData[proc][sub]) {
+                dysfSelect.disabled = false;
+                processData[proc][sub].forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    dysfSelect.appendChild(opt);
+                });
+            } else {
+                dysfSelect.disabled = true;
+            }
+        }
+
+        // Calcul du Score de Criticité C = F * G * M * ND
+        function calculateScore() {
+            const f = parseInt(document.getElementById('frequence').value) || 1;
+            const g = parseInt(document.getElementById('gravite').value) || 1;
+            const m = parseInt(document.getElementById('maitrise').value) || 1;
+            const nd = parseInt(document.getElementById('detection').value) || 1;
+
+            const score = f * g * m * nd;
+            const badge = document.getElementById('criticiteResult');
+            badge.textContent = score;
+
+            if(score > 24) {
+                badge.className = "text-2xl font-extrabold text-red-600";
+            } else if(score >= 16) {
+                badge.className = "text-2xl font-extrabold text-orange-500";
+            } else if(score >= 8) {
+                badge.className = "text-2xl font-extrabold text-yellow-600";
+            } else {
+                badge.className = "text-2xl font-extrabold text-green-600";
+            }
+        }
+
+        // Soumission du Formulaire
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const newRisk = {
+                id: 'RISK-' + String(riskDatabase.length + 1).padStart(4, '0'),
+                date: new Date().toLocaleDateString('fr-BE'),
+                processus: document.getElementById('processus').value,
+                sousProcessus: document.getElementById('sousProcessus').value,
+                dysfonctionnement: document.getElementById('dysfonctionnement').value,
+                acteur: document.getElementById('acteur').value,
+                cause: document.getElementById('cause').value,
+                consequence: document.getElementById('consequence').value,
+                mesureExistante: document.getElementById('mesureExistante').value,
+                mesurePlace: document.getElementById('mesurePlace').value,
+                mesureAPlace: document.getElementById('mesureAPlace').value,
+                frequence: parseInt(document.getElementById('frequence').value),
+                gravite: parseInt(document.getElementById('gravite').value),
+                maitrise: parseInt(document.getElementById('maitrise').value),
+                detection: parseInt(document.getElementById('detection').value),
+                criticite: parseInt(document.getElementById('criticiteResult').textContent)
+            };
+
+            riskDatabase.push(newRisk);
+            localStorage.setItem('chu_risk_db', JSON.stringify(riskDatabase));
+            
+            alert('Dysfonctionnement enregistré avec succès !');
+            document.getElementById('riskForm').reset();
+            populateSubProcesses();
+            calculateScore();
+        }
+
+        // Rendu du Tableau (Admin) avec clic pour ouvrir la modale
+        function renderTable() {
+            const tbody = document.getElementById('riskTableBody');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filterProc = document.getElementById('filterProcessus').value;
+
+            tbody.innerHTML = '';
+
+            const filtered = riskDatabase.filter(r => {
+                const matchSearch = r.dysfonctionnement.toLowerCase().includes(search) || r.id.toLowerCase().includes(search);
+                const matchProc = !filterProc || r.processus === filterProc;
+                return matchSearch && matchProc;
+            });
+
+            filtered.forEach(r => {
+                let badgeClass = 'bg-green-100 text-green-800';
+                if(r.criticite > 24) badgeClass = 'bg-red-100 text-red-800 font-bold';
+                else if(r.criticite >= 16) badgeClass = 'bg-orange-100 text-orange-800 font-bold';
+                else if(r.criticite >= 8) badgeClass = 'bg-yellow-100 text-yellow-800';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors cursor-pointer';
+                tr.onclick = () => openModal(r.id);
+                tr.innerHTML = `
+                    <td class="p-3 font-mono text-xs font-semibold">${r.id}</td>
+                    <td class="p-3">${r.processus}</td>
+                    <td class="p-3 text-slate-500">${r.sousProcessus}</td>
+                    <td class="p-3 font-medium">${r.dysfonctionnement}</td>
+                    <td class="p-3">${r.acteur || '-'}</td>
+                    <td class="p-3 text-center">${r.frequence}</td>
+                    <td class="p-3 text-center">${r.gravite}</td>
+                    <td class="p-3 text-center">${r.maitrise}</td>
+                    <td class="p-3 text-center">${r.detection}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-xs ${badgeClass}">${r.criticite}</span></td>
+                    <td class="p-3 text-center" onclick="event.stopPropagation()">
+                        <button onclick="deleteRisk('${r.id}')" class="text-red-500 hover:text-red-700 font-semibold text-xs">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Gestion de la modale de détails
+        function openModal(id) {
+            const risk = riskDatabase.find(r => r.id === id);
+            if (!risk) return;
+
+            document.getElementById('modalTitle').textContent = `Détails de l'enregistrement : ${risk.id} (${risk.date})`;
+            
+            const content = document.getElementById('modalContent');
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border">
+                    <div><strong>Processus :</strong> <span class="text-slate-700">${risk.processus}</span></div>
+                    <div><strong>Sous-Processus :</strong> <span class="text-slate-700">${risk.sousProcessus}</span></div>
+                    <div class="col-span-2"><strong>Dysfonctionnement :</strong> <span class="text-slate-700 font-medium">${risk.dysfonctionnement}</span></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><strong>Acteur impliqué :</strong> ${risk.acteur || 'Non spécifié'}</div>
+                    <div><strong>Cause :</strong> ${risk.cause || 'Non spécifiée'}</div>
+                    <div class="col-span-2"><strong>Conséquence :</strong> ${risk.consequence || 'Non spécifiée'}</div>
+                </div>
+                <div class="border-t pt-3 space-y-2">
+                    <div><strong>Mesure corrective existante :</strong> ${risk.mesureExistante}</div>
+                    <div><strong>Mesures déjà en place :</strong> <p class="text-slate-600 bg-slate-50 p-2 rounded mt-1">${risk.mesurePlace || 'Aucune'}</p></div>
+                    <div><strong>Mesures à mettre en place :</strong> <p class="text-slate-600 bg-slate-50 p-2 rounded mt-1">${risk.mesureAPlace || 'Aucune'}</p></div>
+                </div>
+                <div class="border-t pt-3 grid grid-cols-5 gap-2 text-center bg-blue-50 p-3 rounded-lg">
+                    <div><span class="block text-xs text-slate-500">Fréquence (F)</span><strong>${risk.frequence}</strong></div>
+                    <div><span class="block text-xs text-slate-500">Gravité (G)</span><strong>${risk.gravite}</strong></div>
+                    <div><span class="block text-xs text-slate-500">Maîtrise (M)</span><strong>${risk.maitrise}</strong></div>
+                    <div><span class="block text-xs text-slate-500">Non-Détection (ND)</span><strong>${risk.detection}</strong></div>
+                    <div><span class="block text-xs text-blue-600">Score C</span><strong class="text-lg text-blue-700">${risk.criticite}</strong></div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Supprimer un élément
+        function deleteRisk(id) {
+            if(confirm('Voulez-vous vraiment supprimer cet enregistrement ?')) {
+                riskDatabase = riskDatabase.filter(r => r.id !== id);
+                localStorage.setItem('chu_risk_db', JSON.stringify(riskDatabase));
+                renderTable();
+            }
+        }
+
+        // Données de démonstration
+        function addSampleData() {
+            const samples = [
+                { id: 'RISK-0001', date: '01/09/2026', processus: 'Lavage / Désinfection', sousProcessus: 'Lavage manuel', dysfonctionnement: 'Insuffisance de brossage et d\'écouvillonnage', acteur: 'Agent de stérilisation', cause: 'Cause humaine', consequence: 'Non-conformité produit', mesureExistante: 'Oui', mesurePlace: 'Procédure visuelle', mesureAPlace: 'Formation de rappel', frequence: 2, gravite: 4, maitrise: 2, detection: 3, criticite: 48 },
+                { id: 'RISK-0002', date: '02/09/2026', processus: 'Stérilisation', sousProcessus: 'Chargement & Cycle Autoclave', dysfonctionnement: 'Interruption du cycle de stérilisation', acteur: 'Technicien biomédical', cause: 'Panne d\'équipement', consequence: 'Retard de livraison bloc', mesureExistante: 'Non', mesurePlace: '', mesureAPlace: 'Maintenance préventive', frequence: 1, gravite: 3, maitrise: 1, detection: 1, criticite: 3 }
+            ];
+            riskDatabase = [...riskDatabase, ...samples];
+            localStorage.setItem('chu_risk_db', JSON.stringify(riskDatabase));
+            renderTable();
+        }
+
+        // Exportation Excel SheetJS (Admin uniquement)
+        function exportToExcel() {
+            if (currentRole !== 'admin') return;
+            if(riskDatabase.length === 0) {
+                alert('Aucune donnée à exporter !');
+                return;
+            }
+            const worksheet = XLSX.utils.json_to_sheet(riskDatabase);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Risques");
+            XLSX.writeFile(workbook, "CHU_Saint_Pierre_Gestion_Risques.xlsx");
+        }
+
+        // Configuration Charts.js sécurisée
+        let chartCrit = null;
+        let chartProc = null;
+
+        function updateDashboard() {
+            if (currentRole !== 'admin') return;
+
+            const total = riskDatabase.length;
+            const critique = riskDatabase.filter(r => r.criticite > 24).length;
+            const eleve = riskDatabase.filter(r => r.criticite >= 16 && r.criticite <= 24).length;
+            const moyen = riskDatabase.filter(r => r.criticite >= 8 && r.criticite < 16).length;
+            const maitrise = riskDatabase.filter(r => r.criticite < 8).length;
+
+            document.getElementById('kpi-total').textContent = total;
+            document.getElementById('kpi-critique').textContent = critique;
+            document.getElementById('kpi-eleve').textContent = eleve;
+            document.getElementById('kpi-maitrise').textContent = maitrise;
+
+            if (!chartCrit) {
+                const ctx1 = document.getElementById('chartCriticite').getContext('2d');
+                chartCrit = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Maîtrisé (<8)', 'Moyen (8-15)', 'Élevé (16-24)', 'Critique (>24)'],
+                        datasets: [{
+                            data: [maitrise, moyen, eleve, critique],
+                            backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            } else {
+                chartCrit.data.datasets[0].data = [maitrise, moyen, eleve, critique];
+                chartCrit.update();
+            }
+
+            const procCounts = {
+                'Réception': 0,
+                'Lavage / Désinfection': 0,
+                'Contrôle': 0,
+                'Conditionnement': 0,
+                'Stérilisation': 0,
+                'Transport/lavage des armoires': 0
+            };
+            riskDatabase.forEach(r => {
+                if(procCounts[r.processus] !== undefined) procCounts[r.processus]++;
+            });
+
+            if (!chartProc) {
+                const ctx2 = document.getElementById('chartProcessus').getContext('2d');
+                chartProc = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Réception', 'Lavage', 'Contrôle', 'Condition.', 'Stéril.', 'Transport'],
+                        datasets: [{
+                            label: 'Nombre de risques',
+                            data: Object.values(procCounts),
+                            backgroundColor: '#3b82f6'
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            } else {
+                chartProc.data.datasets[0].data = Object.values(procCounts);
+                chartProc.update();
+            }
+        }
+    </script>
+</body>
+</html>
