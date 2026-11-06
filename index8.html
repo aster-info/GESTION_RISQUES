@@ -62,7 +62,7 @@
                     <button id="role-user" onclick="setRole('user')" class="px-3 py-1 text-xs font-semibold rounded-md transition-all bg-slate-700 text-white">
                         Rôle: Utilisateur
                     </button>
-                    <button id="role-admin" onclick="requestAdmin()" class="px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white">
+                    <button id="role-admin" onclick="openAdminModal()" class="px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white">
                         Admin
                     </button>
                 </div>
@@ -331,7 +331,28 @@
 
     </main>
 
-    <!-- FENÊTRE MODALE DE DÉTAIL -->
+    <!-- FENÊTRE MODALE DE CONNEXION ADMIN -->
+    <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold">Connexion Administrateur</h3>
+                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-600">Veuillez entrer le mot de passe administrateur pour accéder aux fonctionnalités avancées :</p>
+                <div>
+                    <input type="password" id="adminPasswordInput" placeholder="Mot de passe" class="w-full border rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="adminErrorMsg" class="text-red-500 text-xs hidden font-semibold">Mot de passe incorrect.</div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t flex justify-end space-x-2">
+                <button onclick="closeAdminModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-lg text-sm">Annuler</button>
+                <button onclick="verifyAdminPassword()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-lg text-sm">Se connecter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FENÊTRE MODALE DE DÉTAIL D'UN RISQUE -->
     <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 transform transition-all">
             <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
@@ -396,178 +417,3 @@
                 "Arrivée des armoires sales": [
                     "Armoire de transport souillée non désinfectée",
                     "Système de verrouillage d'armoire défectueux"
-                ],
-                "Traçabilité": [
-                    "Absence d'association lot lavage / laveur",
-                    "Non-enregistrement du changement de chimie"
-                ],
-                "Essai": [
-                    "Non-réalisation du test de protéine hebdomadaire",
-                    "Echec du test de contrôle de nettoyage"
-                ]
-            },
-            "Contrôle": {
-                "Inspection visuelle & Fonctionnelle": [
-                    "Instrument ébréché non retiré",
-                    "Présence de rouille ou piqûres d'oxydation",
-                    "Défaut d'articulation non détecté"
-                ]
-            },
-            "Conditionnement": {
-                "Mise en sachet / Gainage": [
-                    "Soudure de gaine incomplète ou trouée",
-                    "Emballage sous-dimensionné mettant sous tension la soudure",
-                    "Indicateur physico-chimique absent dans le sachet"
-                ]
-            },
-            "Stérilisation": {
-                "Chargement & Cycle Autoclave": [
-                    "Test VP / Bowie-Dick non conforme validé quand même",
-                    "Incompatibilité des articles chargés avec le cycle vapeur",
-                    "Interruption du cycle de stérilisation"
-                ]
-            },
-            "Transport/lavage des armoires": {
-                "Gestion du parc d'armoires": [
-                    "Rupture de la chaîne du propre durant le transport",
-                    "Erreur de destination du conteneur stérile"
-                ]
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            calculateScore();
-            setRole('user');
-
-            // Liaison robuste par écouteur d'événements pour éviter tout blocage de l'onchange
-            document.getElementById('processus').addEventListener('change', populateSubProcesses);
-            document.getElementById('sousProcessus').addEventListener('change', populateDysfunctions);
-        });
-
-        // Gestion de l'authentification Admin par mot de passe
-        function requestAdmin() {
-            if (currentRole === 'admin') return;
-
-            const pwd = prompt("Entrez le mot de passe Administrateur :");
-            if (pwd === "aster2026") {
-                setRole('admin');
-                alert("Mode Administrateur activé avec succès !");
-            } else if (pwd !== null) {
-                alert("Mot de passe incorrect.");
-            }
-        }
-
-        // Bascule des rôles
-        function setRole(role) {
-            currentRole = role;
-            const btnUser = document.getElementById('role-user');
-            const btnAdmin = document.getElementById('role-admin');
-            const btnBd = document.getElementById('btn-bd');
-            const btnDashboard = document.getElementById('btn-dashboard');
-            const btnExportExcel = document.getElementById('btn-export-excel');
-
-            if (role === 'admin') {
-                btnAdmin.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow";
-                btnUser.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
-                
-                btnBd.classList.remove('hidden');
-                btnDashboard.classList.remove('hidden');
-                if(btnExportExcel) btnExportExcel.classList.remove('hidden');
-            } else {
-                btnUser.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-slate-700 text-white";
-                btnAdmin.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
-                
-                btnBd.classList.add('hidden');
-                btnDashboard.classList.add('hidden');
-                if(btnExportExcel) btnExportExcel.classList.add('hidden');
-                
-                switchTab('encodage');
-            }
-        }
-
-        // Gestionnaire d'Onglets
-        function switchTab(tabName) {
-            if ((tabName === 'bd' || tabName === 'dashboard') && currentRole !== 'admin') {
-                alert("Accès restreint. Veuillez vous connecter en tant qu'administrateur.");
-                return;
-            }
-
-            document.getElementById('tab-encodage').classList.add('hidden');
-            document.getElementById('tab-bd').classList.add('hidden');
-            document.getElementById('tab-dashboard').classList.add('hidden');
-            
-            document.getElementById('btn-encodage').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
-            if(document.getElementById('btn-bd')) document.getElementById('btn-bd').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
-            if(document.getElementById('btn-dashboard')) document.getElementById('btn-dashboard').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
-
-            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-            document.getElementById(`btn-${tabName}`).className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700 text-white shadow';
-
-            if(tabName === 'bd') {
-                renderTable();
-            } else if(tabName === 'dashboard') {
-                updateDashboard();
-            }
-        }
-
-        // Remplir le menu Sous-processus
-        function populateSubProcesses() {
-            const proc = document.getElementById('processus').value;
-            const subSelect = document.getElementById('sousProcessus');
-            const dysfSelect = document.getElementById('dysfonctionnement');
-
-            subSelect.innerHTML = '<option value="">-- Sélectionner un sous-processus --</option>';
-            dysfSelect.innerHTML = '<option value="">-- Sélectionner d\'abord un sous-processus --</option>';
-            dysfSelect.disabled = true;
-
-            if(proc && processData[proc]) {
-                subSelect.disabled = false;
-                Object.keys(processData[proc]).forEach(sub => {
-                    const opt = document.createElement('option');
-                    opt.value = sub;
-                    opt.textContent = sub;
-                    subSelect.appendChild(opt);
-                });
-            } else {
-                subSelect.disabled = true;
-            }
-        }
-
-        // Remplir le menu Dysfonctionnement
-        function populateDysfunctions() {
-            const proc = document.getElementById('processus').value;
-            const sub = document.getElementById('sousProcessus').value;
-            const dysfSelect = document.getElementById('dysfonctionnement');
-
-            dysfSelect.innerHTML = '<option value="">-- Sélectionner un dysfonctionnement --</option>';
-
-            if(proc && sub && processData[proc] && processData[proc][sub]) {
-                dysfSelect.disabled = false;
-                processData[proc][sub].forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d;
-                    opt.textContent = d;
-                    dysfSelect.appendChild(opt);
-                });
-            } else {
-                dysfSelect.disabled = true;
-            }
-        }
-
-        // Calcul du Score de Criticité C = F * G * M * ND
-        function calculateScore() {
-            const f = parseInt(document.getElementById('frequence').value) || 1;
-            const g = parseInt(document.getElementById('gravite').value) || 1;
-            const m = parseInt(document.getElementById('maitrise').value) || 1;
-            const nd = parseInt(document.getElementById('detection').value) || 1;
-
-            const score = f * g * m * nd;
-            const badge = document.getElementById('criticiteResult');
-            badge.textContent = score;
-
-            if(score > 24) {
-                badge.className = "text-2xl font-extrabold text-red-600";
-            } else if(score >= 16) {
-                badge.className = "text-2xl font-extrabold text-orange-500";
-            } else if(score >= 8) {
-                badge.className
