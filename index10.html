@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Risques - ST PIERRE</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .form-section {
+            background-color: #FFFDE7;
+            border: 1px solid #E0E0E0;
+        }
+        .form-header {
+            color: #1A365D;
+            border-bottom: 2px solid #CBD5E0;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+    <!-- En-tête Principal -->
+    <header class="bg-[#0f172a] text-white shadow-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+            
+            <!-- Logo et Titre -->
+            <div class="flex items-center space-x-4">
+                <div class="bg-white px-2 py-1 rounded shadow flex items-center">
+                    <!-- Logo CHU Saint-Pierre -->
+                    <svg class="h-8 w-auto" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="400" height="120" fill="white"/>
+                        <path d="M20 20 H50 V50 H90 V20 H120 V100 H90 V70 H50 V100 H20 Z" fill="#D32F2F"/>
+                        <path d="M70 65 L95 45 L120 65 L95 85 Z" fill="#E65100"/>
+                        <text x="135" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#D32F2F">CHU Saint-Pierre</text>
+                        <text x="135" y="85" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="#D32F2F">UMC Sint-Pieter</text>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold tracking-wide text-white">Gestion des Risques - ST PIERRE</h1>
+            </div>
+            
+            <!-- Navigation par Onglets & Sélecteur de Rôle -->
+            <div class="flex items-center space-x-4 mt-2 sm:mt-0">
+                <nav class="flex space-x-2">
+                    <button onclick="switchTab('encodage')" id="btn-encodage" class="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700 text-white shadow flex items-center space-x-2">
+                        <span>➕ Encodage</span>
+                    </button>
+                    <!-- Visibles uniquement en mode Admin -->
+                    <button onclick="switchTab('bd')" id="btn-bd" class="hidden px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        📁 Base de Données
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="hidden px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        📊 Tableau de bord
+                    </button>
+                </nav>
+
+                <!-- Sélecteur de Rôle (Utilisateur / Admin) -->
+                <div class="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-700">
+                    <button id="role-user" onclick="setRole('user')" class="px-3 py-1 text-xs font-semibold rounded-md transition-all bg-slate-700 text-white">
+                        Rôle: Utilisateur
+                    </button>
+                    <button id="role-admin" onclick="requestAdmin()" class="px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white">
+                        Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteneur Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- ================= ONGLET 1 : FORMULAIRE D'ENCODAGE ================= -->
+        <section id="tab-encodage" class="space-y-6">
+            <form id="riskForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                
+                <!-- SECTION 1: Classification -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">1 Classification du dysfonctionnement</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="processus" class="block text-sm font-semibold text-slate-700 mb-1">Quel processus ? *</label>
+                            <select id="processus" required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500">
+                                <option value="">-- Sélectionner un processus --</option>
+                                <option value="Réception">Réception</option>
+                                <option value="Lavage / Désinfection">Lavage / Désinfection</option>
+                                <option value="Contrôle">Contrôle</option>
+                                <option value="Conditionnement">Conditionnement</option>
+                                <option value="Stérilisation">Stérilisation</option>
+                                <option value="Transport/lavage des armoires">Transport/lavage des armoires</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="sousProcessus" class="block text-sm font-semibold text-slate-700 mb-1">Quel sous-processus ? *</label>
+                            <select id="sousProcessus" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                <option value="">-- Sélectionner d'abord un processus --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="dysfonctionnement" class="block text-sm font-semibold text-slate-700 mb-1">Quel dysfonctionnement spécifique ? *</label>
+                        <select id="dysfonctionnement" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                            <option value="">-- Sélectionner d'abord un sous-processus --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Actions & Causes -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">2 Actions</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label for="acteur" class="block text-sm font-semibold text-slate-700 mb-1">Acteur professionnel impliqué</label>
+                            <select id="acteur" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Agent de stérilisation">Agent de stérilisation</option>
+                                <option value="Infirmier / Soignant">Infirmier / Soignant</option>
+                                <option value="Technicien biomédical">Technicien biomédical</option>
+                                <option value="Prestataire externe">Prestataire externe</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="cause" class="block text-sm font-semibold text-slate-700 mb-1">Cause du dysfonctionnement</label>
+                            <select id="cause" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Cause humaine">Cause humaine</option>
+                                <option value="Panne d'équipement">Panne d'équipement</option>
+                                <option value="Défaut de consommable">Défaut de consommable</option>
+                                <option value="Défaut de procédure">Défaut de procédure</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="consequence" class="block text-sm font-semibold text-slate-700 mb-1">Conséquences du dysfonctionnement</label>
+                            <select id="consequence" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Retard de livraison bloc">Retard de livraison bloc</option>
+                                <option value="Non-conformité produit">Non-conformité produit</option>
+                                <option value="Risque d'infection (IAAS)">Risque d'infection (IAAS)</option>
+                                <option value="Détérioration matériel">Détérioration matériel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="mesureExistante" class="block text-sm font-semibold text-slate-700 mb-1">Mesure corrective existante ?</label>
+                            <select id="mesureExistante" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="Non">Non</option>
+                                <option value="Oui">Oui</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="mesurePlace" class="block text-sm font-semibold text-slate-700 mb-1">Si oui, expliquez les mesures déjà en place :</label>
+                            <textarea id="mesurePlace" rows="2" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="mesureAPlace" class="block text-sm font-semibold text-slate-700 mb-1">Quelles sont les mesures à mettre en place ?</label>
+                            <textarea id="mesureAPlace" rows="2" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Evaluation Criticité -->
+                <div class="form-section p-6 rounded-xl shadow-sm">
+                    <h2 class="form-header text-xl font-bold pb-2 mb-4">3 Évaluation de la criticité résiduelle</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="maitrise" class="block text-sm font-semibold text-slate-700 mb-1">Coefficient de maîtrise du dysfonctionnement</label>
+                            <select id="maitrise" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="1">1 - Très bien maîtrisé</option>
+                                <option value="2">2 - Moyennement maîtrisé</option>
+                                <option value="3">3 - Peu maîtrisé</option>
+                                <option value="4">4 - Non maîtrisé</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="detection" class="block text-sm font-semibold text-slate-700 mb-1">Coefficient de non-détection du dysfonctionnement</label>
+                            <select id="detection" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 shadow-sm">
+                                <option value="1">1 - Détection immédiate / Systématique</option>
+                                <option value="2">2 - Détection probable</option>
+                                <option value="3">3 - Détection difficile</option>
+                                <option value="4">4 - Indétectable avant utilisation</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-300 rounded-lg p-4 bg-white shadow-inner max-w-xl mx-auto">
+                        <legend class="text-sm font-bold text-slate-700 px-2">Évaluation de la criticité totale</legend>
+                        <div class="grid grid-cols-3 gap-4 text-center items-center mt-2">
+                            <div>
+                                <label for="frequence" class="block text-xs font-semibold text-slate-600">Fréquence (F)</label>
+                                <select id="frequence" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 text-center shadow-sm">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="gravite" class="block text-xs font-semibold text-slate-600">Gravité (G)</label>
+                                <select id="gravite" onchange="calculateScore()" class="w-full bg-white border border-slate-300 rounded-md p-2 text-center shadow-sm">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg border">
+                                <span class="block text-xs font-semibold text-slate-500">Score de Criticité C</span>
+                                <span id="criticiteResult" class="text-2xl font-extrabold text-green-600">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bouton Submit -->
+                    <div class="mt-6 text-right">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition-transform active:scale-95">
+                            Ajouter le dysfonctionnement
+                        </button>
