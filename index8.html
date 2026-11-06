@@ -84,7 +84,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label for="processus" class="block text-sm font-semibold text-slate-700 mb-1">Quel processus ? *</label>
-                            <select id="processus" onchange="populateSubProcesses()" required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500">
+                            <select id="processus" required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500">
                                 <option value="">-- Sélectionner un processus --</option>
                                 <option value="Réception">Réception</option>
                                 <option value="Lavage / Désinfection">Lavage / Désinfection</option>
@@ -97,7 +97,7 @@
                         
                         <div>
                             <label for="sousProcessus" class="block text-sm font-semibold text-slate-700 mb-1">Quel sous-processus ? *</label>
-                            <select id="sousProcessus" onchange="populateDysfunctions()" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
+                            <select id="sousProcessus" disabled required class="w-full bg-white border border-slate-300 rounded-md p-2.5 shadow-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed">
                                 <option value="">-- Sélectionner d'abord un processus --</option>
                             </select>
                         </div>
@@ -406,3 +406,168 @@
                     "Echec du test de contrôle de nettoyage"
                 ]
             },
+            "Contrôle": {
+                "Inspection visuelle & Fonctionnelle": [
+                    "Instrument ébréché non retiré",
+                    "Présence de rouille ou piqûres d'oxydation",
+                    "Défaut d'articulation non détecté"
+                ]
+            },
+            "Conditionnement": {
+                "Mise en sachet / Gainage": [
+                    "Soudure de gaine incomplète ou trouée",
+                    "Emballage sous-dimensionné mettant sous tension la soudure",
+                    "Indicateur physico-chimique absent dans le sachet"
+                ]
+            },
+            "Stérilisation": {
+                "Chargement & Cycle Autoclave": [
+                    "Test VP / Bowie-Dick non conforme validé quand même",
+                    "Incompatibilité des articles chargés avec le cycle vapeur",
+                    "Interruption du cycle de stérilisation"
+                ]
+            },
+            "Transport/lavage des armoires": {
+                "Gestion du parc d'armoires": [
+                    "Rupture de la chaîne du propre durant le transport",
+                    "Erreur de destination du conteneur stérile"
+                ]
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateScore();
+            setRole('user');
+
+            // Liaison robuste par écouteur d'événements pour éviter tout blocage de l'onchange
+            document.getElementById('processus').addEventListener('change', populateSubProcesses);
+            document.getElementById('sousProcessus').addEventListener('change', populateDysfunctions);
+        });
+
+        // Gestion de l'authentification Admin par mot de passe
+        function requestAdmin() {
+            if (currentRole === 'admin') return;
+
+            const pwd = prompt("Entrez le mot de passe Administrateur :");
+            if (pwd === "aster2026") {
+                setRole('admin');
+                alert("Mode Administrateur activé avec succès !");
+            } else if (pwd !== null) {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        // Bascule des rôles
+        function setRole(role) {
+            currentRole = role;
+            const btnUser = document.getElementById('role-user');
+            const btnAdmin = document.getElementById('role-admin');
+            const btnBd = document.getElementById('btn-bd');
+            const btnDashboard = document.getElementById('btn-dashboard');
+            const btnExportExcel = document.getElementById('btn-export-excel');
+
+            if (role === 'admin') {
+                btnAdmin.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow";
+                btnUser.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
+                
+                btnBd.classList.remove('hidden');
+                btnDashboard.classList.remove('hidden');
+                if(btnExportExcel) btnExportExcel.classList.remove('hidden');
+            } else {
+                btnUser.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-slate-700 text-white";
+                btnAdmin.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
+                
+                btnBd.classList.add('hidden');
+                btnDashboard.classList.add('hidden');
+                if(btnExportExcel) btnExportExcel.classList.add('hidden');
+                
+                switchTab('encodage');
+            }
+        }
+
+        // Gestionnaire d'Onglets
+        function switchTab(tabName) {
+            if ((tabName === 'bd' || tabName === 'dashboard') && currentRole !== 'admin') {
+                alert("Accès restreint. Veuillez vous connecter en tant qu'administrateur.");
+                return;
+            }
+
+            document.getElementById('tab-encodage').classList.add('hidden');
+            document.getElementById('tab-bd').classList.add('hidden');
+            document.getElementById('tab-dashboard').classList.add('hidden');
+            
+            document.getElementById('btn-encodage').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
+            if(document.getElementById('btn-bd')) document.getElementById('btn-bd').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
+            if(document.getElementById('btn-dashboard')) document.getElementById('btn-dashboard').className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-800 text-slate-300 hover:bg-slate-700';
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabName}`).className = 'px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700 text-white shadow';
+
+            if(tabName === 'bd') {
+                renderTable();
+            } else if(tabName === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Remplir le menu Sous-processus
+        function populateSubProcesses() {
+            const proc = document.getElementById('processus').value;
+            const subSelect = document.getElementById('sousProcessus');
+            const dysfSelect = document.getElementById('dysfonctionnement');
+
+            subSelect.innerHTML = '<option value="">-- Sélectionner un sous-processus --</option>';
+            dysfSelect.innerHTML = '<option value="">-- Sélectionner d\'abord un sous-processus --</option>';
+            dysfSelect.disabled = true;
+
+            if(proc && processData[proc]) {
+                subSelect.disabled = false;
+                Object.keys(processData[proc]).forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    subSelect.appendChild(opt);
+                });
+            } else {
+                subSelect.disabled = true;
+            }
+        }
+
+        // Remplir le menu Dysfonctionnement
+        function populateDysfunctions() {
+            const proc = document.getElementById('processus').value;
+            const sub = document.getElementById('sousProcessus').value;
+            const dysfSelect = document.getElementById('dysfonctionnement');
+
+            dysfSelect.innerHTML = '<option value="">-- Sélectionner un dysfonctionnement --</option>';
+
+            if(proc && sub && processData[proc] && processData[proc][sub]) {
+                dysfSelect.disabled = false;
+                processData[proc][sub].forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    dysfSelect.appendChild(opt);
+                });
+            } else {
+                dysfSelect.disabled = true;
+            }
+        }
+
+        // Calcul du Score de Criticité C = F * G * M * ND
+        function calculateScore() {
+            const f = parseInt(document.getElementById('frequence').value) || 1;
+            const g = parseInt(document.getElementById('gravite').value) || 1;
+            const m = parseInt(document.getElementById('maitrise').value) || 1;
+            const nd = parseInt(document.getElementById('detection').value) || 1;
+
+            const score = f * g * m * nd;
+            const badge = document.getElementById('criticiteResult');
+            badge.textContent = score;
+
+            if(score > 24) {
+                badge.className = "text-2xl font-extrabold text-red-600";
+            } else if(score >= 16) {
+                badge.className = "text-2xl font-extrabold text-orange-500";
+            } else if(score >= 8) {
+                badge.className
